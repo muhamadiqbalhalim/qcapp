@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Mengemaskan reka bentuk scrollbar bagi elemen senarai kad */
+        /* Custom scrollbar for scrollable lists */
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
         }
@@ -55,14 +55,15 @@
                 </section>
 
                 <section class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mb-8 flex flex-col relative">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-black text-lg flex items-center gap-2 text-blue-600">
-                            <i data-lucide="award" size="20"></i> Skill Proficiency Matrix
+                    <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 mb-6">
+                        <h3 class="font-black text-lg flex items-center gap-2 text-blue-600 leading-tight">
+                            <i data-lucide="award" size="20" class="flex-shrink-0"></i> 
+                            Skill Proficiency Matrix
                             <button id="openInfoBtn" class="text-slate-400 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer" title="View breakdown info">
                                 <i data-lucide="info" size="18"></i>
                             </button>
                         </h3>
-                        <span id="rankBadge" class="text-xs font-black px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-100">
+                        <span id="rankBadge" class="inline-block text-xs font-black px-3 py-1.5 rounded-full bg-orange-50 text-orange-600 border border-orange-100 whitespace-nowrap">
                             Bronze Apprentice
                         </span>
                     </div>
@@ -184,8 +185,32 @@
                 const user = JSON.parse(localStorage.getItem('session'));
                 if (!user) { RoleManager.forceLogout(); return; }
 
+                // Load sidebar first
                 await loadSidebar('SidebarOperator.html');
                 
+                // FIX 2: ATTACH MOBILE SIDEBAR MENU LOGIC AFTER SIDEBAR IS LOADED
+                const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+                const closeMenuBtn = document.getElementById('closeMenuBtn');
+                const sidebarMenu = document.getElementById('sidebarMenu');
+                const mobileOverlay = document.getElementById('mobileOverlay');
+
+                function openMenu() {
+                    if (sidebarMenu) sidebarMenu.classList.remove('-translate-x-full');
+                    if (mobileOverlay) mobileOverlay.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden'; 
+                }
+
+                function closeMenu() {
+                    if (sidebarMenu) sidebarMenu.classList.add('-translate-x-full');
+                    if (mobileOverlay) mobileOverlay.classList.add('hidden');
+                    document.body.style.overflow = ''; 
+                }
+
+                if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openMenu);
+                if (closeMenuBtn) closeMenuBtn.addEventListener('click', closeMenu);
+                if (mobileOverlay) mobileOverlay.addEventListener('click', closeMenu);
+                // END OF FIX 2
+
                 document.getElementById("trainingFilter").addEventListener("change", renderTrainings);
                 document.getElementById("trainingSort").addEventListener("change", renderTrainings);
 
@@ -197,14 +222,14 @@
 
                 // Popup Modal Logic Setup
                 const openBtn = document.getElementById('openInfoBtn');
-                const closeBtn = document.getElementById('closeInfoBtn');
-                const modal = document.getElementById('infoModal');
+                const closeInfoModalBtn = document.getElementById('closeInfoBtn');
+                const infoModal = document.getElementById('infoModal');
 
-                if (openBtn && closeBtn && modal) {
-                    openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
-                    closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
-                    modal.addEventListener('click', (e) => {
-                        if (e.target === modal) modal.classList.add('hidden');
+                if (openBtn && closeInfoModalBtn && infoModal) {
+                    openBtn.addEventListener('click', () => infoModal.classList.remove('hidden'));
+                    closeInfoModalBtn.addEventListener('click', () => infoModal.classList.add('hidden'));
+                    infoModal.addEventListener('click', (e) => {
+                        if (e.target === infoModal) infoModal.classList.add('hidden');
                     });
                 }
 
@@ -303,13 +328,13 @@
             if (rankBadge) {
                 if (compositeScore >= 85) {
                     rankBadge.innerText = "Gold Certified Elite";
-                    rankBadge.className = "text-xs font-black px-3 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-200";
+                    rankBadge.className = "inline-block text-xs font-black px-3 py-1.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200 whitespace-nowrap";
                 } else if (compositeScore >= 70) {
                     rankBadge.innerText = "Silver Verified Operator";
-                    rankBadge.className = "text-xs font-black px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200";
+                    rankBadge.className = "inline-block text-xs font-black px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap";
                 } else {
                     rankBadge.innerText = "Bronze Apprentice";
-                    rankBadge.className = "text-xs font-black px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200";
+                    rankBadge.className = "inline-block text-xs font-black px-3 py-1.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200 whitespace-nowrap";
                 }
             }
 
@@ -323,7 +348,6 @@
             radarChartInstance = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    // Labels condensed slightly to preserve safe breathing space on mobile widths
                     labels: ['Defect Accuracy', 'Cycle Time Mastery', 'Sequence Adherence', 'Theory Assessment'],
                     datasets: [{
                         label: 'Proficiency Level (%)',
@@ -366,8 +390,6 @@
                 }
             });
         }
-
-        initDashboard();
 
         function renderTrainings() {
             const trainingList = document.getElementById("trainingList");
