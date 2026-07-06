@@ -7,18 +7,35 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Mengemaskan reka bentuk scrollbar bagi elemen senarai kad */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
 </head>
-<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+<body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased">
 
     <div id="main-content" style="display: none;">
         <div class="flex flex-col md:flex-row min-h-screen">
             <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
 
-            <main class="flex-1 p-4 md:p-8 overflow-y-auto">
-                <header class="mb-8">
-                    <p class="text-xs uppercase tracking-[0.15em] text-blue-500 font-black mb-2">Operator Dashboard</p>
-                    <h1 class="text-3xl md:text-5xl font-black">
-                        Welcome, <span id="userName" class="text-blue-600">Loading...</span>
+            <main class="flex-1 p-4 md:p-8 overflow-y-auto w-full max-w-7xl mx-auto">
+                <header class="mb-8 border-b border-slate-100 pb-4">
+                    <p class="text-xs uppercase tracking-[0.15em] text-blue-600 font-black mb-1">Operator Hub</p>
+                    <h1 class="text-3xl md:text-5xl font-black tracking-tight">
+                        Welcome back, <span id="userName" class="text-blue-600">Loading...</span>
                     </h1>
                 </header>
 
@@ -32,106 +49,111 @@
                         <p id="statDept" class="text-xl font-black mt-1 text-slate-700">-</p>
                     </div>
                     <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                        <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Role</p>
+                        <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Assigned Role</p>
                         <p id="statRole" class="text-xl font-black mt-1 text-slate-700">-</p>
                     </div>
                 </section>
 
-                <section class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mb-8 flex flex-col">
+                <section class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mb-8 flex flex-col relative">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="font-black text-lg flex items-center gap-2 text-blue-600">
                             <i data-lucide="award" size="20"></i> Skill Proficiency Matrix
+                            <button id="openInfoBtn" class="text-slate-400 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer" title="View breakdown info">
+                                <i data-lucide="info" size="18"></i>
+                            </button>
                         </h3>
                         <span id="rankBadge" class="text-xs font-black px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-100">
                             Bronze Apprentice
                         </span>
                     </div>
 
-                    <div class="max-w-xs md:max-w-sm mx-auto aspect-square relative h-[300px] my-4">
+                    <div class="w-full max-w-xs md:max-w-sm mx-auto aspect-square relative h-[290px] my-2 py-2">
                         <canvas id="skillsChart"></canvas>
-                    </div>
-
-                    <div class="w-full border-t border-slate-100 my-6"></div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left mb-6">
-                        <div class="p-3.5 bg-purple-50/60 rounded-xl border border-purple-100">
-                            <p class="text-xs font-black text-purple-700 flex items-center gap-1.5 mb-1">
-                                🎯 Defect Detection Accuracy
-                            </p>
-                            <p class="text-[11px] text-slate-500 leading-relaxed">
-                                Mengukur ketepatan anda dalam mengesan dan merekodkan kecacatan (*defect*) sebenar pada produk semasa tugasan semakan langsung.
-                            </p>
-                        </div>
-                        
-                        <div class="p-3.5 bg-amber-50/60 rounded-xl border border-amber-100">
-                            <p class="text-xs font-black text-amber-700 flex items-center gap-1.5 mb-1">
-                                ⚡ Cycle Time Mastery
-                            </p>
-                            <p class="text-[11px] text-slate-500 leading-relaxed">
-                                Menilai kepantasan masa kitaran kerja anda berbanding dengan standard *Takt Time* pemeriksaan rasmi kilang yang ditetapkan.
-                            </p>
-                        </div>
-
-                        <div class="p-3.5 bg-blue-50/60 rounded-xl border border-blue-100">
-                            <p class="text-xs font-black text-blue-700 flex items-center gap-1.5 mb-1">
-                                📋 Sequence Adherence
-                            </p>
-                            <p class="text-[11px] text-slate-500 leading-relaxed">
-                                Mengira tahap disiplin kronologi langkah kerja digital anda supaya sentiasa mematuhi ketetapan turutan standard SOP/WI.
-                            </p>
-                        </div>
-
-                        <div class="p-3.5 bg-emerald-50/60 rounded-xl border border-emerald-100">
-                            <p class="text-xs font-black text-emerald-700 flex items-center gap-1.5 mb-1">
-                                🧠 Theoretical Assessment
-                            </p>
-                            <p class="text-[11px] text-slate-500 leading-relaxed">
-                                Purata gred pemahaman teknikal berdasarkan siri keputusan ujian kuiz e-learning kawalan mutu (QC Exam) yang anda duduki.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
-                        <p class="font-black text-slate-700 flex items-center gap-1.5 mb-1.5">
-                            ℹ️ How the radar chart is calculated:
-                        </p>
-                        <ul class="list-disc list-inside space-y-1 text-slate-500 text-[11px] pl-1">
-                            <li>Data ditarik secara dinamik daripada pangkalan data <span class="font-semibold text-slate-700">Firebase Logs & Exam Results</span> milik ID anda.</li>
-                            <li>Setiap paksi dikira berdasarkan purata kumulatif sumbangan data lepas. Jika rekod log belum wujud, sistem menggunakan nilai benchmark asas <span class="font-semibold text-slate-700">50%</span>.</li>
-                            <li>Gred pangkat lencana (Gold/Silver/Bronze) dikira melalui formula <span class="font-semibold text-blue-600">Purata Komposit = (🎯 + ⚡ + 📋 + 🧠) ÷ 4</span>. Skor ≥85% akan diklasifikasikan sebagai <span class="font-bold text-amber-600">Gold Certified Elite</span>.</li>
-                        </ul>
                     </div>
                 </section>
 
+                <div id="infoModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] hidden flex items-center justify-center p-4">
+                    <div class="bg-white w-full max-w-2xl rounded-3xl shadow-xl overflow-hidden border border-slate-100 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+                        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <div class="flex items-center gap-2 text-blue-600">
+                                <i data-lucide="help-circle" size="20"></i>
+                                <h4 class="font-black text-slate-800">Matrix Core Metrics Guide</h4>
+                            </div>
+                            <button id="closeInfoBtn" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer">
+                                <i data-lucide="x" size="20"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="p-6 overflow-y-auto space-y-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                                <div class="p-3.5 bg-purple-50/60 rounded-xl border border-purple-100">
+                                    <p class="text-xs font-black text-purple-700 flex items-center gap-1.5 mb-1">🎯 Defect Detection Accuracy</p>
+                                    <p class="text-[11px] text-slate-500 leading-relaxed">Measures your accuracy in finding and logging real defects during active inspection workloads.</p>
+                                </div>
+                                
+                                <div class="p-3.5 bg-amber-50/60 rounded-xl border border-amber-100">
+                                    <p class="text-xs font-black text-amber-700 flex items-center gap-1.5 mb-1">⚡ Cycle Time Mastery</p>
+                                    <p class="text-[11px] text-slate-500 leading-relaxed">Evaluates your task execution velocity matched against official factory benchmark Takt Times.</p>
+                                </div>
+
+                                <div class="p-3.5 bg-blue-50/60 rounded-xl border border-blue-100">
+                                    <p class="text-xs font-black text-blue-700 flex items-center gap-1.5 mb-1">📋 Sequence Adherence</p>
+                                    <p class="text-[11px] text-slate-500 leading-relaxed">Calculates chronological discipline following digital workplace steps aligned with SOP/WI standards.</p>
+                                </div>
+
+                                <div class="p-3.5 bg-emerald-50/60 rounded-xl border border-emerald-100">
+                                    <p class="text-xs font-black text-emerald-700 flex items-center gap-1.5 mb-1">🧠 Theory Assessment</p>
+                                    <p class="text-[11px] text-slate-500 leading-relaxed">Represents your overall grade performance derived from linked e-learning quality assurance exams.</p>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
+                                <p class="font-black text-slate-700 flex items-center gap-1.5 mb-1.5">ℹ️ How the radar chart is calculated:</p>
+                                <ul class="list-disc list-inside space-y-1.5 text-slate-500 text-[11px] pl-1">
+                                    <li>Data points are retrieved dynamically from secure <span class="font-semibold text-slate-700">Firebase Logs & Exam Results</span> linked to your ID.</li>
+                                    <li>Each dimension represents a cumulative historical average. If no record logs exist yet, a default baseline score of <span class="font-semibold text-slate-700">50%</span> is systematically deployed.</li>
+                                    <li>Badge status levels are computed via the formula: <br><span class="inline-block mt-1 font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">Composite Score = (🎯 + ⚡ + 📋 + 🧠) ÷ 4</span>. A cumulative score ≥85% qualifies your profile as a <span class="font-bold text-amber-600">Gold Certified Elite</span>.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-[480px]">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 flex-shrink-0">
                             <h3 class="font-black text-lg flex items-center gap-2 text-blue-600">
                                 <i data-lucide="book-open" size="20"></i> My Trainings
                                 <span id="trainingCount" class="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">0</span>
                             </h3>
 
                             <div class="flex gap-3">
-                                <select id="trainingFilter" class="border rounded-lg px-3 py-2 text-sm bg-white">
+                                <select id="trainingFilter" class="border rounded-lg px-2 py-1.5 text-xs bg-white cursor-pointer focus:outline-blue-500">
                                     <option value="ALL">All</option>
                                     <option value="PENDING">Pending Attendance</option>
                                     <option value="COMPLETED">Completed</option>
                                     <option value="EXPIRED">Expired</option>
                                 </select>
-                                <select id="trainingSort" class="border rounded-lg px-3 py-2 text-sm bg-white">
+                                <select id="trainingSort" class="border rounded-lg px-2 py-1.5 text-xs bg-white cursor-pointer focus:outline-blue-500">
                                     <option value="RECENT">Recent First</option>
                                     <option value="OLDEST">Oldest First</option>
                                 </select>
                             </div>
                         </div>
-                        <div id="trainingList" class="space-y-3"><p class="text-sm opacity-50 italic">Loading trainings...</p></div>
+                        <div id="trainingList" class="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+                            <p class="text-sm opacity-50 italic">Loading trainings...</p>
+                        </div>
                     </div>
 
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <h3 class="font-black text-lg mb-6 flex items-center gap-2 text-amber-500">
-                            <i data-lucide="file-text" size="20"></i> Active Exams
-                        </h3>
-                        <div id="examList" class="space-y-3"><p class="text-sm opacity-50 italic">Loading exams...</p></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-[480px]">
+                        <div class="flex-shrink-0 mb-4">
+                            <h3 class="font-black text-lg flex items-center gap-2 text-amber-500">
+                                <i data-lucide="file-text" size="20"></i> Active Exams
+                            </h3>
+                        </div>
+                        <div id="examList" class="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+                            <p class="text-sm opacity-50 italic">Loading exams...</p>
+                        </div>
                     </div>
                 </section>
             </main>
@@ -152,7 +174,6 @@
         let radarChartInstance = null;
 
         async function initDashboard() {
-            // Jaminan paparan terbuka sekiranya ralat luaran berlaku
             document.getElementById('loading').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
 
@@ -174,10 +195,21 @@
                 document.getElementById('statDept').innerText = user.department || "N/A";
                 document.getElementById('statRole').innerText = ROLE_LABELS[user.role] || "N/A";
 
-                // Panggil pengiraan kemahiran dinamik berasaskan Firebase Logs
+                // Popup Modal Logic Setup
+                const openBtn = document.getElementById('openInfoBtn');
+                const closeBtn = document.getElementById('closeInfoBtn');
+                const modal = document.getElementById('infoModal');
+
+                if (openBtn && closeBtn && modal) {
+                    openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+                    closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) modal.classList.add('hidden');
+                    });
+                }
+
                 await compileCalculatedSkills(userId);
 
-                // Fetch Pendaftaran & Status Attendance
                 const regQuery = query(collection(db, "training_registrations"), where("staffId", "==", String(userId)), orderBy("timestamp", "desc"));
                 const attQuery = query(collection(db, "training_attendance"), where("staffId", "==", String(userId)));
                 
@@ -216,23 +248,21 @@
 
                 renderTrainings();
 
-                // Fetch Exams
                 const eSnap = await getDocs(query(collection(db, "qc_exams"), where("status", "==", "active")));
                 const examList = document.getElementById('examList');
-                examList.innerHTML = !eSnap.empty ? "" : '<p class="text-sm opacity-50">No active exams.</p>';
+                examList.innerHTML = !eSnap.empty ? "" : '<p class="text-sm opacity-50 italic text-slate-400 p-2">No active exams.</p>';
                 eSnap.forEach(doc => {
                     const e = doc.data();
                     examList.innerHTML += `
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 bg-amber-50/50 rounded-lg border border-amber-100 text-sm">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-amber-50/50 rounded-xl border border-amber-100 text-sm">
                             <span class="font-semibold truncate mr-2 text-amber-900">${e.title || "Exam"}</span>
-                            <button onclick="window.location.href='TakeExam.html?id=${doc.id}'" class="px-3 py-1 bg-amber-600 text-white text-[10px] font-bold rounded-lg hover:bg-amber-700">Start</button>
+                            <button onclick="window.location.href='TakeExam.html?id=${doc.id}'" class="w-full sm:w-auto px-4 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 cursor-pointer transition-colors">Start</button>
                         </div>`;
                 });
 
                 lucide.createIcons();
             } catch (err) {
                 console.error("Dashboard Config Engine Warning:", err);
-                // Fallback selamat jika offline / tanpa server login
                 buildRadarChart([65, 75, 80, 60]);
                 lucide.createIcons();
             }
@@ -293,7 +323,8 @@
             radarChartInstance = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: ['Defect Detection Accuracy', 'Cycle Time Mastery', 'Sequence Adherence', 'Theoretical Assessment'],
+                    // Labels condensed slightly to preserve safe breathing space on mobile widths
+                    labels: ['Defect Accuracy', 'Cycle Time Mastery', 'Sequence Adherence', 'Theory Assessment'],
                     datasets: [{
                         label: 'Proficiency Level (%)',
                         data: dataPoints,
@@ -307,12 +338,27 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 10,
+                            bottom: 10,
+                            left: 15,
+                            right: 15
+                        }
+                    },
                     scales: {
                         r: {
                             suggestedMin: 0, suggestedMax: 100,
                             angleLines: { color: 'rgba(226, 232, 240, 0.8)' },
                             grid: { color: 'rgba(226, 232, 240, 0.8)' },
-                            pointLabels: { font: { size: 10, weight: '800', family: 'sans-serif' }, color: '#475569' },
+                            pointLabels: { 
+                                font: { 
+                                    size: window.innerWidth < 640 ? 9 : 10, 
+                                    weight: '800', 
+                                    family: 'sans-serif' 
+                                }, 
+                                color: '#475569' 
+                            },
                             ticks: { display: false }
                         }
                     },
@@ -344,27 +390,27 @@
             trainingList.innerHTML = "";
 
             if (list.length === 0) {
-                trainingList.innerHTML = `<p class="text-sm italic text-slate-400">No trainings found.</p>`;
+                trainingList.innerHTML = `<p class="text-sm italic text-slate-400 p-2">No trainings found.</p>`;
                 return;
             }
 
             list.forEach(training => {
                 trainingList.innerHTML += `
-                <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 p-4 rounded-2xl border
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-4 rounded-2xl border mr-1
                     ${training.completed ? "bg-green-50 border-green-200" : training.expired ? "bg-red-50 border-red-200" : "bg-blue-50 border-blue-200"}">
                     <div class="flex-1">
-                        <p class="font-black text-slate-900">${training.trainingName}</p>
+                        <p class="font-black text-slate-900 leading-tight">${training.trainingName}</p>
                         <p class="text-xs text-slate-500 mt-1">📅 ${training.trainingDate} &nbsp;&nbsp;&nbsp; 🕒 ${training.trainingHours} Hour(s)</p>
-                        <p class="text-xs text-slate-500 mt-1">📍 ${training.location || '-'} &nbsp;&nbsp;&nbsp; 👤 ${training.pic || '-'}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">📍 ${training.location || '-'} &nbsp;&nbsp;&nbsp; 👤 ${training.pic || '-'}</p>
                         <div class="mt-2">
                             <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold ${training.completed ? "bg-green-100 text-green-700" : training.expired ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}">
                                 ${training.completed ? "Completed" : training.expired ? "Expired" : "Pending Attendance"}
                             </span>
                         </div>
                     </div>
-                    ${training.completed ? `<button disabled class="px-5 py-2 rounded-xl bg-green-600 text-white font-bold opacity-60">Done</button>` : 
-                      training.expired ? `<button disabled class="px-5 py-2 rounded-xl bg-red-600 text-white font-bold opacity-60">Expired</button>` : 
-                      `<a href="TrainingAttendance.html?id=${training.trainingId}" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-center">Check In</a>`}
+                    ${training.completed ? `<button disabled class="w-full sm:w-auto px-5 py-2 rounded-xl bg-green-600 text-white font-bold opacity-60 text-sm">Done</button>` : 
+                      training.expired ? `<button disabled class="w-full sm:w-auto px-5 py-2 rounded-xl bg-red-600 text-white font-bold opacity-60 text-sm">Expired</button>` : 
+                      `<a href="TrainingAttendance.html?id=${training.trainingId}" class="w-full sm:w-auto px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm text-center cursor-pointer block transition-colors">Check In</a>`}
                 </div>`;
             });
         }
