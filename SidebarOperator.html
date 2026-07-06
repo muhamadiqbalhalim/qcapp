@@ -87,37 +87,3 @@
     </aside>
 
 </div>
-
-<script>
-    (function() {
-        // Render Lucide icons for the newly injected HTML
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-
-        // DOM Elements
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const closeMenuBtn = document.getElementById('closeMenuBtn');
-        const sidebarMenu = document.getElementById('sidebarMenu');
-        const mobileOverlay = document.getElementById('mobileOverlay');
-
-        // Logic to open sidebar drawer
-        function openMenu() {
-            sidebarMenu.classList.remove('-translate-x-full');
-            mobileOverlay.classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // Halang skrol belakang pada mobile
-        }
-
-        // Logic to close sidebar drawer
-        function closeMenu() {
-            sidebarMenu.classList.add('-translate-x-full');
-            mobileOverlay.classList.add('hidden');
-            document.body.style.overflow = ''; // Kembalikan skrol
-        }
-
-        // Attach Event Listeners safely
-        if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openMenu);
-        if (closeMenuBtn) closeMenuBtn.addEventListener('click', closeMenu);
-        if (mobileOverlay) mobileOverlay.addEventListener('click', closeMenu);
-    })();
-</script>
