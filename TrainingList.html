@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Training Calendar | QC Team</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -14,140 +14,154 @@
         }
         /* Custom scrollbar untuk event kecil dalam kalendar */
         .event-container::-webkit-scrollbar {
-            width: 3px;
+            width: 4px;
         }
         .event-container::-webkit-scrollbar-thumb {
             background-color: #cbd5e1;
             border-radius: 4px;
         }
+        /* Sembunyikan scrollbar untuk calendar wrapper pada mobile tapi kekalkan fungsi scroll */
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 
-<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+<body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-blue-200">
 
     <div class="flex flex-col md:flex-row min-h-screen">
-        <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+        <div id="sidebar-container" class="md:h-screen sticky top-0 z-40 bg-white md:bg-transparent shadow-sm md:shadow-none"></div>
 
-        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+        <main class="flex-1 p-4 sm:p-6 md:p-8 w-full max-w-[100vw] overflow-x-hidden">
             
-            <header class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <header class="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-5">
                 <div>
-                    <h1 class="text-2xl md:text-3xl font-black flex items-center gap-3 tracking-tight">
-                        <i id="header-icon" data-lucide="calendar-days" class="text-blue-600"></i> Training Calendar
+                    <h1 class="text-2xl sm:text-3xl font-black flex items-center gap-3 tracking-tight text-slate-800">
+                        <i id="header-icon" data-lucide="calendar-days" class="text-blue-600 w-7 h-7 sm:w-8 sm:h-8"></i> 
+                        Training Calendar
                     </h1>
-                    <p class="text-slate-500 text-xs mt-0.5">Click any session to view details, or click an empty slot (Admin) to schedule training.</p>
+                    <p class="text-slate-500 text-xs sm:text-sm mt-1.5 leading-relaxed max-w-xl">
+                        Click any session to view details. Admins can tap an empty slot to schedule new training.
+                    </p>
                 </div>
                 
                 <div id="adminBadgeContainer" class="hidden">
-                    <span id="roleBadge" class="px-3 py-1.5 text-xs font-bold rounded-xl shadow-sm"></span>
+                    <span id="roleBadge" class="px-4 py-2 text-xs sm:text-sm font-bold rounded-xl shadow-sm inline-flex items-center gap-2"></span>
                 </div>
             </header>
 
-            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                 
-                <div class="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50/50">
-                    <button id="prevMonthBtn" class="p-2 hover:bg-slate-200 rounded-xl transition-colors">
-                        <i data-lucide="chevron-left" size="20"></i>
+                <div class="flex items-center justify-between p-4 sm:p-5 border-b border-slate-200 bg-slate-50/80">
+                    <button id="prevMonthBtn" class="p-2 sm:p-2.5 hover:bg-white bg-transparent hover:shadow-sm border border-transparent hover:border-slate-200 rounded-xl transition-all active:scale-95">
+                        <i data-lucide="chevron-left" class="w-5 h-5 sm:w-6 sm:h-6 text-slate-600"></i>
                     </button>
-                    <h2 id="currentMonthYear" class="text-lg font-black text-slate-800 tracking-tight">July 2026</h2>
-                    <button id="nextMonthBtn" class="p-2 hover:bg-slate-200 rounded-xl transition-colors">
-                        <i data-lucide="chevron-right" size="20"></i>
+                    <h2 id="currentMonthYear" class="text-lg sm:text-xl font-black text-slate-800 tracking-tight">July 2026</h2>
+                    <button id="nextMonthBtn" class="p-2 sm:p-2.5 hover:bg-white bg-transparent hover:shadow-sm border border-transparent hover:border-slate-200 rounded-xl transition-all active:scale-95">
+                        <i data-lucide="chevron-right" class="w-5 h-5 sm:w-6 sm:h-6 text-slate-600"></i>
                     </button>
                 </div>
 
-                <div class="calendar-grid bg-slate-100 border-b border-slate-200 text-center py-2.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    <div>Sunday</div>
-                    <div>Monday</div>
-                    <div>Tuesday</div>
-                    <div>Wednesday</div>
-                    <div>Thursday</div>
-                    <div>Friday</div>
-                    <div>Saturday</div>
-                </div>
+                <div class="w-full overflow-x-auto hide-scroll pb-2">
+                    <div class="min-w-[700px] w-full"> <div class="calendar-grid bg-slate-100/50 border-b border-slate-200 text-center py-3 text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <div>Sun</div>
+                            <div>Mon</div>
+                            <div>Tue</div>
+                            <div>Wed</div>
+                            <div>Thu</div>
+                            <div>Fri</div>
+                            <div>Sat</div>
+                        </div>
 
-                <div id="calendarDaysGrid" class="calendar-grid bg-slate-200 gap-[1px]"></div>
+                        <div id="calendarDaysGrid" class="calendar-grid bg-slate-200 gap-[1px]"></div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
-    <div id="detailsModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 transform transition-all">
-            <div class="flex justify-between items-start mb-4">
-                <h3 id="modalTrainingName" class="text-xl font-black text-slate-900 leading-tight pr-6">Training Name</h3>
-                <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-50 rounded-lg">
-                    <i data-lucide="x" size="20"></i>
+    <div id="detailsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-5 sm:p-7 max-w-md w-full shadow-2xl border border-slate-100 transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-5">
+                <h3 id="modalTrainingName" class="text-xl sm:text-2xl font-black text-slate-900 leading-tight pr-6">Training Name</h3>
+                <button onclick="closeModal('detailsModal')" class="text-slate-400 hover:text-red-500 p-1.5 bg-slate-50 hover:bg-red-50 rounded-xl transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             
-            <div class="space-y-3 text-sm text-slate-700 mb-6 border-t pt-4">
-                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="calendar" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">Date:</strong> <span id="lblDate"></span></span></div>
-                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="clock" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">Time:</strong> <span id="lblTime"></span></span></div>
-                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="hourglass" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">Duration:</strong> <span id="lblDuration"></span></span></div>
-                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="map-pin" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">Location:</strong> <span id="lblLocation"></span></span></div>
-                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="user" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">PIC:</strong> <span id="lblPic"></span></span></div>
-                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="building" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">Open To:</strong> <span id="lblOpenTo"></span></span></div>
-                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="users" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">Available Slots:</strong> <span id="lblSlots" class="font-bold"></span></span></div>
+            <div class="space-y-4 text-sm text-slate-700 mb-6 border-t border-slate-100 pt-5">
+                <div class="flex items-center gap-3"><div class="p-2 bg-blue-50 rounded-lg"><i data-lucide="calendar" class="text-blue-500 w-4 h-4"></i></div> <span><strong class="text-slate-900">Date:</strong> <span id="lblDate"></span></span></div>
+                <div class="flex items-center gap-3"><div class="p-2 bg-blue-50 rounded-lg"><i data-lucide="clock" class="text-blue-500 w-4 h-4"></i></div> <span><strong class="text-slate-900">Time:</strong> <span id="lblTime"></span></span></div>
+                <div class="flex items-center gap-3"><div class="p-2 bg-blue-50 rounded-lg"><i data-lucide="hourglass" class="text-blue-500 w-4 h-4"></i></div> <span><strong class="text-slate-900">Duration:</strong> <span id="lblDuration"></span></span></div>
+                <div class="flex items-center gap-3"><div class="p-2 bg-blue-50 rounded-lg"><i data-lucide="map-pin" class="text-blue-500 w-4 h-4"></i></div> <span><strong class="text-slate-900">Location:</strong> <span id="lblLocation"></span></span></div>
+                <div class="flex items-center gap-3"><div class="p-2 bg-blue-50 rounded-lg"><i data-lucide="user" class="text-blue-500 w-4 h-4"></i></div> <span><strong class="text-slate-900">PIC:</strong> <span id="lblPic"></span></span></div>
+                <div class="flex items-center gap-3"><div class="p-2 bg-blue-50 rounded-lg"><i data-lucide="building" class="text-blue-500 w-4 h-4"></i></div> <span><strong class="text-slate-900">Open To:</strong> <span id="lblOpenTo"></span></span></div>
+                <div class="flex items-center gap-3"><div class="p-2 bg-blue-50 rounded-lg"><i data-lucide="users" class="text-blue-500 w-4 h-4"></i></div> <span><strong class="text-slate-900">Available Slots:</strong> <span id="lblSlots" class="font-black text-lg"></span></span></div>
             </div>
             
-            <div class="flex gap-3 border-t pt-4">
-                <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="flex-1 py-2.5 border font-bold rounded-xl text-sm hover:bg-slate-50 transition-colors">← Back</button>
-                <div id="actionBtnContainer" class="flex-1 flex"></div>
+            <div class="flex flex-col sm:flex-row gap-3 border-t border-slate-100 pt-5">
+                <button onclick="closeModal('detailsModal')" class="w-full sm:flex-1 py-3 border border-slate-200 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-50 transition-colors">Close</button>
+                <div id="actionBtnContainer" class="w-full sm:flex-1 flex"></div>
             </div>
         </div>
     </div>
 
-    <div id="createModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
-            <div class="flex justify-between items-center mb-4 pb-2 border-b">
-                <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
-                    <i data-lucide="plus-circle" class="text-emerald-500"></i> Create New Training Session
+    <div id="createModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-5 sm:p-7 max-w-md w-full shadow-2xl border border-slate-100 transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+                <h3 class="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="text-emerald-500"></i> New Training
                 </h3>
-                <button onclick="document.getElementById('createModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1">
-                    <i data-lucide="x" size="20"></i>
+                <button onclick="closeModal('createModal')" class="text-slate-400 hover:text-red-500 p-1.5 bg-slate-50 hover:bg-red-50 rounded-xl transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             
-            <form id="createTrainingForm" class="space-y-3 text-sm">
+            <form id="createTrainingForm" class="space-y-4 text-sm">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Training Name</label>
-                    <input type="text" id="txtNewName" required placeholder="e.g., Kiken Yochi Training" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-slate-400 outline-none">
+                    <label class="block font-bold text-slate-700 mb-1.5">Training Name</label>
+                    <input type="text" id="txtNewName" required placeholder="e.g., Kiken Yochi Training" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 outline-none transition-all">
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Target Date</label>
-                        <input type="date" id="txtNewDate" required class="w-full p-2.5 border rounded-xl outline-none">
+                        <label class="block font-bold text-slate-700 mb-1.5">Target Date</label>
+                        <input type="date" id="txtNewDate" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all">
                     </div>
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Start Time</label>
-                        <input type="time" id="txtNewTime" required class="w-full p-2.5 border rounded-xl outline-none">
+                        <label class="block font-bold text-slate-700 mb-1.5">Start Time</label>
+                        <input type="time" id="txtNewTime" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Duration (mins/hrs)</label>
-                        <input type="text" id="txtNewDuration" required placeholder="e.g., 50 min" class="w-full p-2.5 border rounded-xl outline-none">
+                        <label class="block font-bold text-slate-700 mb-1.5">Duration</label>
+                        <input type="text" id="txtNewDuration" required placeholder="e.g., 50 min" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all">
                     </div>
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Seat Limit (Capacity)</label>
-                        <input type="number" id="txtNewSeatLimit" required placeholder="100" value="100" class="w-full p-2.5 border rounded-xl outline-none">
+                        <label class="block font-bold text-slate-700 mb-1.5">Capacity</label>
+                        <input type="number" id="txtNewSeatLimit" required placeholder="100" value="100" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all">
                     </div>
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Location / Venue</label>
-                    <input type="text" id="txtNewLocation" required placeholder="e.g., Kantin NSSB" class="w-full p-2.5 border rounded-xl outline-none">
+                    <label class="block font-bold text-slate-700 mb-1.5">Venue</label>
+                    <input type="text" id="txtNewLocation" required placeholder="e.g., Kantin NSSB" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Person In-Charge (PIC)</label>
-                    <input type="text" id="txtNewPic" required placeholder="e.g., Cik Haiza" class="w-full p-2.5 border rounded-xl outline-none">
+                    <label class="block font-bold text-slate-700 mb-1.5">PIC</label>
+                    <input type="text" id="txtNewPic" required placeholder="e.g., Cik Haiza" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Allowed Departments (Comma Separated)</label>
-                    <input type="text" id="txtNewDeps" required placeholder="ALL, SHE, IT, FNA, PPIC" class="w-full p-2.5 border rounded-xl outline-none">
+                    <label class="block font-bold text-slate-700 mb-1.5">Allowed Depts (Comma Separated)</label>
+                    <input type="text" id="txtNewDeps" required placeholder="ALL, SHE, IT, FNA, PPIC" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all">
                 </div>
                 
-                <div class="pt-2 flex gap-3">
-                    <button type="button" onclick="document.getElementById('createModal').classList.add('hidden')" class="flex-1 py-2.5 border font-bold rounded-xl text-slate-600 hover:bg-slate-50">Cancel</button>
-                    <button type="submit" id="btnSubmitTraining" class="flex-1 py-2.5 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 shadow-sm transition-colors">Save To Server</button>
+                <div class="pt-4 flex flex-col sm:flex-row gap-3">
+                    <button type="button" onclick="closeModal('createModal')" class="w-full sm:flex-1 py-3 border border-slate-200 font-bold rounded-xl text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
+                    <button type="submit" id="btnSubmitTraining" class="w-full sm:flex-1 py-3 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 shadow-sm transition-colors flex items-center justify-center gap-2">Save To Server</button>
                 </div>
             </form>
         </div>
@@ -172,16 +186,36 @@
         // Parameter Keadaan Kalendar Global
         let currentDate = new Date();
         let trainingsCache = [];
-        let registrationsCache = new Map(); // Tukar ke Map untuk simpan attendanceStatus sekali
+        let registrationsCache = new Map(); 
+
+        // Helper functions for Modal animations
+        window.openModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            // Timeout to allow display block to apply before animating opacity/transform
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        };
+
+        window.closeModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        };
 
         async function initApp() {
             // Tukar warna mengikut Peranan Sesi
-            document.getElementById('header-icon').className = `text-${themeColor}-600`;
+            document.getElementById('header-icon').className = `text-${themeColor}-600 w-7 h-7 sm:w-8 sm:h-8`;
             
             if (isAdmin) {
                 const badge = document.getElementById('roleBadge');
-                badge.textContent = isExec ? "💡 Executive Mode: Training Manager" : "⚡ Leader Mode: Training Manager";
-                badge.className = `px-3 py-1.5 text-xs font-bold rounded-xl bg-${themeColor}-50 text-${themeColor}-700 border border-${themeColor}-200`;
+                badge.innerHTML = isExec ? "<i data-lucide='zap' class='w-4 h-4'></i> Executive Mode" : "<i data-lucide='shield' class='w-4 h-4'></i> Leader Mode";
+                badge.className = `px-4 py-2 text-xs sm:text-sm font-bold rounded-xl bg-${themeColor}-50 text-${themeColor}-700 border border-${themeColor}-200 inline-flex items-center gap-1.5`;
                 document.getElementById('adminBadgeContainer').classList.remove('hidden');
             }
 
@@ -241,7 +275,7 @@
             for (let i = firstDayIndex; i > 0; i--) {
                 const dayNum = prevTotalDays - i + 1;
                 const cell = document.createElement('div');
-                cell.className = "bg-slate-50 min-h-[110px] p-2 text-slate-300 text-xs font-semibold select-none";
+                cell.className = "bg-slate-50 min-h-[120px] p-2 sm:p-3 text-slate-300 text-xs font-semibold select-none";
                 cell.textContent = dayNum;
                 grid.appendChild(cell);
             }
@@ -251,17 +285,17 @@
                 const cell = document.createElement('div');
                 const currentCellDateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
-                cell.className = "bg-white min-h-[110px] p-2 flex flex-col justify-between border-slate-100 hover:bg-slate-50/80 transition-colors cursor-pointer group";
+                cell.className = "bg-white min-h-[120px] p-2 flex flex-col border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer group";
                 
                 const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
                 
                 cell.innerHTML = `
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-md ${isToday ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700'}" data-date="${currentCellDateString}">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs sm:text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white shadow-md' : 'text-slate-700'}" data-date="${currentCellDateString}">
                             ${day}
                         </span>
                     </div>
-                    <div class="flex-1 overflow-y-auto space-y-1 event-container text-[10px] max-h-[70px] pr-0.5"></div>
+                    <div class="flex-1 overflow-y-auto space-y-1.5 event-container pr-1 pb-1"></div>
                 `;
 
                 const matchedTrainings = trainingsCache.filter(t => {
@@ -277,15 +311,14 @@
                     const attendStatus = registrationsCache.get(t.id);
                     const item = document.createElement('div');
                     
-                    // Bezakan warna tag jika sudah disahkan hadir (ATTENDED = green) atau sekadar mendaftar (PENDING)
-                    let badgeBg = `bg-${themeColor}-50 text-${themeColor}-700 border-${themeColor}-100`;
+                    let badgeBg = `bg-${themeColor}-50 text-${themeColor}-700 border-${themeColor}-200`;
                     if (hasJoined) {
                         badgeBg = attendStatus === "ATTENDED" 
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
                             : 'bg-amber-50 text-amber-700 border-amber-200';
                     }
                     
-                    item.className = `p-1 rounded border truncate font-bold ${badgeBg} shadow-2xs hover:scale-[1.02] transition-transform`;
+                    item.className = `p-1.5 sm:p-2 rounded-lg border text-[10px] sm:text-xs leading-tight font-bold ${badgeBg} shadow-sm hover:-translate-y-0.5 transition-transform truncate cursor-pointer`;
                     item.innerHTML = `<span>${t.name}</span>`;
                     
                     item.addEventListener('click', (e) => {
@@ -297,7 +330,7 @@
 
                 cell.addEventListener('click', () => {
                     if (isAdmin) {
-                        openCreateModal(currentCellDateString);
+                        openCreateModalHelper(currentCellDateString);
                     }
                 });
 
@@ -309,7 +342,7 @@
             const remainingCells = (7 - (totalCellsSoFar % 7)) % 7;
             for (let day = 1; day <= remainingCells; day++) {
                 const cell = document.createElement('div');
-                cell.className = "bg-slate-50 min-h-[110px] p-2 text-slate-300 text-xs font-semibold select-none";
+                cell.className = "bg-slate-50 min-h-[120px] p-2 sm:p-3 text-slate-300 text-xs font-semibold select-none";
                 cell.textContent = day;
                 grid.appendChild(cell);
             }
@@ -342,7 +375,7 @@
             
             const lblSlots = document.getElementById('lblSlots');
             lblSlots.textContent = `${remaining} / ${max}`;
-            lblSlots.className = remaining <= 5 ? "font-bold text-red-500" : "font-bold text-emerald-600";
+            lblSlots.className = remaining <= 5 ? "font-black text-lg text-red-500" : "font-black text-lg text-emerald-600";
 
             // Sambungan Pengesahan Pautan Butang Kehadiran
             const hasJoined = registrationsCache.has(t.id);
@@ -353,37 +386,34 @@
 
             if (hasJoined) {
                 if (attendStatus === "ATTENDED") {
-                    // Jika sudah hadir & bukti disahkan
-                    actionContainer.innerHTML = `<button disabled class="w-full py-2.5 bg-emerald-100 text-emerald-600 font-bold rounded-xl text-sm cursor-not-allowed text-center flex items-center justify-center gap-1">✓ Attended & Verified</button>`;
+                    actionContainer.innerHTML = `<button disabled class="w-full py-3 bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold rounded-xl text-sm cursor-not-allowed text-center flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> Attended & Verified</button>`;
                 } else {
-                    // Jika baru 'Join Sesi' (PENDING) -> Paparkan jambatan link butang ke TrainingAttendance.html!
                     actionContainer.innerHTML = `
                         <button onclick="window.location.href='TrainingAttendance.html?id=${t.id}'" 
-                                class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl text-sm shadow-sm transition-colors flex items-center justify-center gap-1.5">
-                            <i data-lucide="camera" size="16"></i> Submit Attendance
+                                class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl text-sm shadow-sm transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="camera" class="w-4 h-4"></i> Submit Attendance
                         </button>
                     `;
                 }
             } else if (!userDeptAllowed) {
-                actionContainer.innerHTML = `<button disabled class="w-full py-2.5 bg-slate-100 text-slate-400 font-bold rounded-xl text-sm cursor-not-allowed flex items-center justify-center gap-1"><i data-lucide="lock" size="14"></i> Restricted</button>`;
+                actionContainer.innerHTML = `<button disabled class="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl text-sm cursor-not-allowed flex items-center justify-center gap-2"><i data-lucide="lock" class="w-4 h-4"></i> Restricted to other Dept</button>`;
             } else if (remaining <= 0) {
-                actionContainer.innerHTML = `<button disabled class="w-full py-2.5 bg-red-100 text-red-500 font-bold rounded-xl text-sm cursor-not-allowed text-center">Full Capacity</button>`;
+                actionContainer.innerHTML = `<button disabled class="w-full py-3 bg-red-50 border border-red-200 text-red-500 font-bold rounded-xl text-sm cursor-not-allowed text-center">Full Capacity</button>`;
             } else {
-                // Sesi pendaftaran baharu
                 const btnJoin = document.createElement('button');
-                btnJoin.className = "w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm transition-colors";
-                btnJoin.textContent = "Join Sesi";
+                btnJoin.className = "w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm transition-colors flex items-center justify-center gap-2";
+                btnJoin.innerHTML = `Join Session <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
                 btnJoin.onclick = () => executionJoinTraining(t, btnJoin);
                 actionContainer.appendChild(btnJoin);
             }
 
-            document.getElementById('detailsModal').classList.remove('hidden');
+            window.openModal('detailsModal');
             lucide.createIcons();
         }
 
         async function executionJoinTraining(t, btn) {
             btn.disabled = true;
-            btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin inline-block" size="14"></i>`;
+            btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-5 h-5"></i>`;
             lucide.createIcons();
 
             try {
@@ -401,28 +431,30 @@
                 });
 
                 alert(`Pendaftaran Berjaya! Sesi latihan anda: ${t.name}`);
-                document.getElementById('detailsModal').classList.add('hidden');
+                window.closeModal('detailsModal');
                 await fetchCalendarData();
             } catch (err) {
                 console.error(err);
                 alert("Server error, pendaftaran gagal.");
                 btn.disabled = false;
-                btn.textContent = "Join Sesi";
+                btn.innerHTML = `Join Session <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
+                lucide.createIcons();
             }
         }
 
         // =============== TINDAKAN MODAL 2: CREATE TRAINING ===============
-        function openCreateModal(targetDateString) {
+        window.openCreateModalHelper = function(targetDateString) {
             document.getElementById('createTrainingForm').reset();
             document.getElementById('txtNewDate').value = targetDateString;
-            document.getElementById('createModal').classList.remove('hidden');
-        }
+            window.openModal('createModal');
+        };
 
         async function handleCreateTrainingSubmit(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSubmitTraining');
             btn.disabled = true;
-            btn.textContent = "Saving...";
+            btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i> Saving...`;
+            lucide.createIcons();
 
             const rawDeps = document.getElementById('txtNewDeps').value;
             const depsArray = rawDeps.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
@@ -443,7 +475,7 @@
             try {
                 await addDoc(collection(db, "trainings"), newTrainingPayload);
                 alert("Sukses! Latihan baharu berjaya diterbitkan.");
-                document.getElementById('createModal').classList.add('hidden');
+                window.closeModal('createModal');
                 await fetchCalendarData();
             } catch (err) {
                 console.error("Gagal mencipta latihan:", err);
