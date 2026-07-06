@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Custom scrollbar diselaraskan seperti reka bentuk papan operator */
+        /* Custom scrollbar matching the operator board design specifications */
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -80,8 +80,8 @@
                 
                 <div class="flex flex-wrap gap-2 mt-6 overflow-x-auto pb-2 custom-scrollbar">
                     <button onclick="filterSubmissions('all')" id="btn-all" class="px-5 py-2 bg-slate-900 text-white text-xs rounded-xl font-black shadow-sm transition-all whitespace-nowrap">All Submissions</button>
-                    <button onclick="filterSubmissions('exam')" id="btn-exam" class="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all whitespace-nowrap">Peperiksaan (Exams)</button>
-                    <button onclick="filterSubmissions('inspection')" id="btn-inspection" class="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all whitespace-nowrap">Audit Lapangan (Inspections)</button>
+                    <button onclick="filterSubmissions('exam')" id="btn-exam" class="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all whitespace-nowrap">Exams</button>
+                    <button onclick="filterSubmissions('inspection')" id="btn-inspection" class="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all whitespace-nowrap">Inspections</button>
                 </div>
             </header>
             
@@ -95,6 +95,7 @@
         import { loadSidebar } from './js/sidebar-loader.js';
         import { RoleManager, ROLES } from './js/Roles.js';
 
+        // Secure active system session layers
         RoleManager.enforceStrictSession();
         RoleManager.protectPage(ROLES.QC_LEADER, ROLES.EXECUTIVE);
 
@@ -120,7 +121,7 @@
         let currentFilterType = 'all';
         let activeRejectionTarget = null;
 
-        // Fungsi mengawal klik Hamburger Menu dari Header atas
+        // Binds event triggers for controlling the mobile navigation menu via the upper header layout element
         function setupMobileMenuEvents() {
             const mobileMenuBtn = document.getElementById('mobileMenuBtn');
             const closeMenuBtn = document.getElementById('closeMenuBtn');
@@ -338,7 +339,7 @@
                         id: d.id, 
                         ...data, 
                         type: 'exam', 
-                        title: data.examTitle || data.examName || 'Peperiksaan QC' 
+                        title: data.examTitle || data.examName || 'QC Exam' 
                     });
                 }
             });
@@ -356,18 +357,18 @@
                         id: d.id, 
                         ...data, 
                         type: 'inspection', 
-                        title: data.templateTitle || 'Audit Lapangan' 
+                        title: data.templateTitle || 'Field Audit' 
                     });
                 }
             });
             filterSubmissions(currentFilterType);
         });
 
-        // Memulakan aplikasi utama
+        // Application main entry pipeline function
         async function initApp() {
             try {
                 await loadSidebar(isLeader ? "SidebarLeader.html" : "SidebarExecutive.html");
-                setupMobileMenuEvents(); // Aktifkan sistem menu klik daripada header atas
+                setupMobileMenuEvents(); // Initialize click events once sidebar markup has successfully loaded
             } catch (e) {
                 console.warn("Sidebar interface build bypassed:", e);
             }
