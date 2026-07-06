@@ -7,54 +7,92 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+<body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8 relative">
 
-    <div class="fixed inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute top-[-10%] left-[-10%] w-[28rem] h-[28rem] rounded-full blur-[100px] opacity-10 bg-blue-300"></div>
-        <div class="absolute bottom-[-15%] right-[-10%] w-[24rem] h-[24rem] rounded-full blur-[100px] opacity-10 bg-amber-300"></div>
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-[-5%] left-[-5%] w-[20rem] sm:w-[32rem] h-[20rem] sm:h-[32rem] rounded-full blur-[80px] sm:blur-[120px] opacity-15 bg-blue-400"></div>
+        <div class="absolute bottom-[-5%] right-[-5%] w-[18rem] sm:w-[28rem] h-[18rem] sm:h-[28rem] rounded-full blur-[80px] sm:blur-[120px] opacity-15 bg-amber-400"></div>
     </div>
 
-    <div class="min-h-screen w-full flex items-center justify-center p-4 md:p-8 relative z-10">
-        <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <div class="w-full max-w-5xl min-h-[500px] sm:min-h-[580px] grid grid-cols-1 lg:grid-cols-12 bg-white/80 backdrop-blur-md rounded-[2.5rem] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] border border-slate-200 relative z-10">
+        
+        <div class="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 p-10 flex-col justify-between relative overflow-hidden">
+            <div class="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:20px_20px] opacity-20"></div>
             
-            <div class="hidden lg:flex flex-col justify-center space-y-8">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center">
-                        <i data-lucide="shield-check" class="text-slate-950"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-black text-2xl tracking-wide">QC Team</h1>
-                        <p class="text-xs opacity-50 uppercase tracking-[0.25em]">Enterprise QC Platform</p>
-                    </div>
+            <div class="relative z-10 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                    <i data-lucide="shield-check" class="text-slate-950 w-5 h-5"></i>
                 </div>
                 <div>
-                    <p class="text-amber-500 font-black uppercase tracking-[0.35em] text-xs mb-5">Manufacturing Workforce</p>
-                    <h2 class="text-6xl font-black leading-tight">QC Training & <br>Competency Management.</h2>
+                    <h1 class="font-black text-lg tracking-wide text-white leading-none">QC Team</h1>
+                    <p class="text-[9px] opacity-40 uppercase tracking-[0.2em] font-bold text-slate-300 mt-1">Enterprise QC Platform</p>
                 </div>
             </div>
 
-            <div class="w-full flex justify-center lg:justify-end">
-                <div class="w-full max-w-[430px] rounded-3xl border border-slate-200 bg-white/90 p-8 md:p-10 backdrop-blur-xl shadow-2xl">
-                    <h3 class="text-3xl font-black mb-8">Welcome Back</h3>
-                    
-                    <form id="loginForm" class="space-y-5">
-                        <div class="relative">
-                            <i data-lucide="user" class="absolute left-4 top-1/2 -translate-y-1/2 opacity-40"></i>
-                            <input type="text" id="empId" placeholder="Employee ID" required 
-                                class="w-full pl-12 pr-4 py-4 rounded-2xl border bg-white focus:border-amber-500 outline-none transition-all">
-                        </div>
-                        
-                        
+            <div class="relative z-10 space-y-4">
+                <p class="text-amber-400 font-black uppercase tracking-[0.3em] text-[10px]">Manufacturing Workforce</p>
+                <h2 class="text-3xl xl:text-4xl font-black leading-tight tracking-tight text-white">
+                    QC Training & <br>Competency Management.
+                </h2>
+                <p class="text-slate-400 text-xs font-medium leading-relaxed max-w-xs">
+                    Sistem berpusat pemantauan kualiti, log pemeriksaan masa nyata, dan pengurusan matriks kompetensi operator.
+                </p>
+            </div>
 
-                        <div id="errorMsg" class="text-red-500 text-sm font-semibold hidden"></div>
-
-                        <button type="submit" id="submitBtn" class="w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 font-black uppercase tracking-widest transition-all">
-                            Access Portal
-                        </button>
-                    </form>
-                </div>
+            <div class="relative z-10 text-[10px] text-slate-500 font-bold tracking-wider uppercase">
+                &copy; 2026 QC Systems International
             </div>
         </div>
+
+        <div class="col-span-1 lg:col-span-7 flex flex-col justify-center p-6 sm:p-12 md:p-16 bg-white/40">
+            
+            <div class="w-full max-w-md mx-auto space-y-7">
+                
+                <div class="space-y-2 text-center lg:text-left">
+                    <div class="inline-flex lg:hidden w-12 h-12 rounded-2xl bg-amber-500 items-center justify-center shadow-lg shadow-amber-500/20 mb-3">
+                        <i data-lucide="shield-check" class="text-slate-950 w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+                        Welcome Back
+                    </h3>
+                    <p class="text-slate-400 text-xs sm:text-sm font-semibold">
+                        Sila masukkan ID Pekerja anda untuk mengakses portal sistem.
+                    </p>
+                </div>
+                
+                <form id="loginForm" class="space-y-5">
+                    
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Employee ID</label>
+                        <div class="relative group">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 group-focus-within:text-amber-500 transition-colors">
+                                <i data-lucide="user" class="w-5 h-5 opacity-60"></i>
+                            </span>
+                            <input type="text" id="empId" placeholder="Masukkan ID Pekerja (cth: 1001)" required 
+                                class="w-full pl-12 pr-4 py-4 text-base sm:text-sm font-semibold rounded-2xl border border-slate-200 bg-white/70 shadow-inner outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all text-slate-800 placeholder-slate-400">
+                        </div>
+                    </div>
+                    
+                    <div id="errorMsg" class="text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-xs font-bold hidden flex items-center gap-2">
+                        </div>
+
+                    <div class="pt-2">
+                        <button type="submit" id="submitBtn" class="w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-slate-950 font-black text-xs uppercase tracking-widest transition-all shadow-md shadow-amber-500/10 flex items-center justify-center gap-2 cursor-pointer">
+                            Access Portal <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                </form>
+
+                <div class="pt-2 text-center lg:text-left border-t border-slate-100">
+                    <p class="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <i data-lucide="lock" class="w-3 h-3 text-emerald-500"></i> Secure Enterprise Access Connection
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
     </div>
 
     <script type="module">
@@ -67,120 +105,99 @@
             updateDoc,
             doc,
             serverTimestamp
-        } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";        import { RoleManager } from "./js/Roles.js";
+        } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { RoleManager } from "./js/Roles.js";
 
-        // 1. Cek sesi sedia ada (Redirect jika sudah login)
+        // Cek sesi sedia ada (Redirect jika sudah login)
         RoleManager.handleLoginRedirect();
 
         const loginForm = document.getElementById('loginForm');
         const empInput = document.getElementById('empId');
         const errorMsg = document.getElementById('errorMsg');
 
-        // Submit Login Logic
+        // Mengendalikan Isu Tundukan Log Masuk
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             const id = empInput.value.trim().toUpperCase();
             
-            btn.innerText = "Loading...";
+            // Mengubah status butang kepada keadaan 'Loading'
+            btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i> Verifying...`;
             btn.disabled = true;
             errorMsg.classList.add('hidden');
+            lucide.createIcons();
             
             try {
-                // 1. Fetch User Data from Firestore
+                // 1. Ambil Data Pengguna daripada Firestore
                 const q = query(collection(db, 'users'), where("employeeId", "==", id));
                 const snap = await getDocs(q);
                 
                 if (snap.empty) {
-                    errorMsg.innerText = "Employee ID not found in database.";
-                    errorMsg.classList.remove('hidden');
+                    displayError("Employee ID not found in database.");
                     btn.disabled = false;
                 } else {
-const userData = snap.docs[0].data();
+                    const userData = snap.docs[0].data();
 
-// Check QC Access
-if (!userData.qcRole) {
+                    // Semak Hak Akses QC Role
+                    if (!userData.qcRole) {
+                        displayError("Your QC account has not been activated. Please contact QC Executive.");
+                        return;
+                    }
 
-    errorMsg.innerText =
-        "Your QC account has not been activated. Please contact QC Executive.";
+                    if (!userData.qcStatus || userData.qcStatus === "PENDING") {
+                        displayError("Your QC account is pending activation. Please contact QC Executive.");
+                        return;
+                    }
 
-    errorMsg.classList.remove("hidden");
-    return;
+                    if (userData.qcStatus === "DISABLED") {
+                        displayError("Your QC account has been disabled.");
+                        return;
+                    }
 
-}
+                    // Kemas kini Tarikh/Masa Log Masuk Terakhir
+                    await updateDoc(
+                        doc(db, "users", snap.docs[0].id),
+                        { lastLogin: serverTimestamp() }
+                    );
 
-if (!userData.qcStatus || userData.qcStatus === "PENDING") {
+                    // Menyimpan data sesi ke dalam Stor Tempatan
+                    sessionStorage.setItem("qc_logged_in_user", id);
+                    localStorage.setItem("qc_logged_in_user", id);
+                    localStorage.setItem(
+                        "session",
+                        JSON.stringify({
+                            ...userData,
+                            id: snap.docs[0].id,
+                            role: userData.qcRole
+                        })
+                    );
 
-    errorMsg.innerText =
-        "Your QC account is pending activation. Please contact QC Executive.";
-
-    errorMsg.classList.remove("hidden");
-
-    return;
-
-}
-
-if (userData.qcStatus === "DISABLED") {
-
-    errorMsg.innerText =
-        "Your QC account has been disabled.";
-
-    errorMsg.classList.remove("hidden");
-
-    return;
-
-}
-
-    // ======================================================
-    // Update Last Login
-    // ======================================================
-
-    await updateDoc(
-        doc(db, "users", snap.docs[0].id),
-        {
-            lastLogin: serverTimestamp()
-        }
-    );
-
-    // ======================================================
-    // Save Session
-    // ======================================================
-
-    sessionStorage.setItem("qc_logged_in_user", id);
-
-    localStorage.setItem("qc_logged_in_user", id);
-
-    localStorage.setItem(
-        "session",
-        JSON.stringify({
-
-            ...userData,
-
-            id: snap.docs[0].id,
-
-            role: userData.qcRole
-
-        })
-    );
-
-    // ======================================================
-    // Redirect
-    // ======================================================
-
-    RoleManager.redirectToRespectiveDashboard(
-        userData.qcRole
-    );
-             }
+                    // Penghalaan Automatik Mengikut Peranan Kerja
+                    RoleManager.redirectToRespectiveDashboard(userData.qcRole);
+                }
             } catch (err) {
                 console.error("Login Error:", err);
-                errorMsg.innerText = "Connection error. Please try again.";
-                errorMsg.classList.remove('hidden');
+                displayError("Connection error. Please try again.");
             } finally {
-                btn.innerText = "Access Portal";
+                btn.innerHTML = `Access Portal <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
                 btn.disabled = false;
+                lucide.createIcons();
             }
         });
 
+        // Pembantu Paparan Mesej Ralat Kustom dengan Ikon Amaran
+        function displayError(message) {
+            errorMsg.innerHTML = `<i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i> <span>${message}</span>`;
+            errorMsg.classList.remove('hidden');
+            lucide.createIcons();
+            
+            const btn = document.getElementById('submitBtn');
+            btn.innerHTML = `Access Portal <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
+            btn.disabled = false;
+            lucide.createIcons();
+        }
+
+        // Aktifkan ikon Lucide pada permulaan halaman
         lucide.createIcons();
     </script>
 </body>
