@@ -33,7 +33,7 @@
 
 <body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-blue-200">
 
-    <div class="flex flex-col md:flex-row min-h-screen">
+    <div class="flex flex-col md:flex-row min-h-screen w-full overflow-x-hidden">
         <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
 
         <main class="flex-1 p-4 sm:p-6 md:p-8 w-full max-w-full">
@@ -223,16 +223,24 @@
             const targetSidebar = isExec ? 'SidebarExecutive.html' : (isLeader ? 'SidebarLeader.html' : 'SidebarOperator.html');
             await loadSidebar(targetSidebar);
 
-            // FIX: Global Event delegation to catch clicks on dynamically loaded menu/hamburger buttons
+            // UPGRADED FIX: High-coverage event delegation targeting the navbar toggle
             document.addEventListener('click', (e) => {
-                // Find if the clicked element is the hamburger button or inside it
-                const toggleBtn = e.target.closest('button') || e.target.closest('.cursor-pointer');
-                if (toggleBtn && (toggleBtn.id === 'mobileMenuBtn' || toggleBtn.querySelector('[data-lucide="menu"]') || e.target.closest('svg'))) {
-                    // Find the injected mobile navigation menu panel element and toggle its hidden/translate property
-                    const sideMenuPanel = document.querySelector('#sidebar-container nav, #sidebar-container div[class*="fixed"]');
-                    if (sideMenuPanel) {
-                        sideMenuPanel.classList.toggle('hidden');
-                        sideMenuPanel.classList.toggle('-translate-x-full');
+                // Check if user clicked the button element or an SVG icon inside the top header area
+                const clickedToggle = e.target.closest('button') || e.target.closest('.cursor-pointer');
+                
+                if (clickedToggle && (
+                    clickedToggle.id === 'mobileMenuBtn' || 
+                    clickedToggle.querySelector('[data-lucide="menu"]') || 
+                    clickedToggle.innerHTML.includes('svg') ||
+                    e.target.closest('svg')
+                )) {
+                    // Search inside sidebar container for the primary nav menu drawer panel
+                    const navMenuDrawer = document.querySelector('#sidebar-container aside, #sidebar-container nav, #sidebar-container div[class*="fixed"]');
+                    
+                    if (navMenuDrawer) {
+                        // Toggle hidden and sliding transform state cleanly
+                        navMenuDrawer.classList.toggle('hidden');
+                        navMenuDrawer.classList.toggle('-translate-x-full');
                     }
                 }
             });
