@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Manager | QC Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+
+    <div id="main-content" style="display: none;">
+        <div class="flex flex-col md:flex-row min-h-screen">
+            <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+
+            <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+                <header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-5">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.15em] text-purple-600 font-black mb-1">Assessment Controls</p>
+                        <h1 class="text-3xl font-black tracking-tight">Exam Management Hub</h1>
+                    </div>
+                    <button onclick="window.location.href='ExamTemplate.html'" class="bg-purple-600 text-white px-6 py-3.5 rounded-2xl font-black hover:bg-purple-700 transition-all shadow-sm flex items-center justify-center gap-2 text-sm shrink-0">
+                        <i data-lucide="plus" size="18"></i> Create New Exam
+                    </button>
+                </header>
+
+                <div id="examGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="loading" class="flex justify-center items-center h-screen bg-[#F8FAFC]">
+        <div class="text-center">
+            <i data-lucide="loader-2" class="animate-spin text-purple-600 mx-auto" size="40"></i>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-3">Loading Exam Database...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/FirebaseConfig.js';
+        import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { loadSidebar } from './js/sidebar-loader.js';
+        import { ROLES, RoleManager } from './js/Roles.js';
+
+        // Strict Access Control Guard
+        RoleManager.enforceStrictSession();
+        RoleManager.protectPage(ROLES.QC_LEADER, ROLES.EXECUTIVE);
+
+        const user = JSON.parse(localStorage.getItem("session"));
+
+        async function initPage() {
+            try {
+                // Dinamik load sidebar mengikut peranan akaun semasa
+                const targetSidebar = user.role === ROLES.EXECUTIVE ? 'SidebarExecutive.html' : 'SidebarLeader.html';
+                await loadSidebar(targetSidebar);
+
+                // Tarik maklumat peperiksaan
+                await loadExams();
+
+                // Swap visual layers
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                lucide.createIcons();
+            } catch (err) {
+                console.error("Exam Manager Loader Error:", err);
+                alert("Failed to securely load assessment configuration profiles.");
+            }
+        }
+
+        async function loadExams() {
+            const grid = document.getElementById('examGrid');
+            const snap = await getDocs(collection(db, "qc_exams"));
+            grid.innerHTML = "";
+
+            if (snap.empty) {
+                grid.className = "block text-center p-12 bg-white rounded-3xl border border-slate-200";
+                grid.innerHTML = `
+                    <i data-lucide="folder-open" class="mx-auto text-slate-300 mb-3" size="40"></i>
+                    <p class="text-sm font-medium text-slate-400 italic">No exams configurations registered inside the collection database yet.</p>
+                `;
+                return;
+            }
+
+            // Restore template grid layout style context
+            grid.className = "grid grid-cols-1 lg:grid-cols-2 gap-6";
+
+            snap.forEach(d => {
+                const exam = d.data();
+                const creator = exam.createdBy || {}; 
+                
+                // Safe checking handler untuk timestamp format data
+                let date = 'N/A';
+                if (exam.createdAt) {
+                    date = typeof exam.createdAt.toDate === 'function' 
+                        ? exam.createdAt.toDate().toLocaleString() 
+                        : new Date(exam.createdAt).toLocaleString();
+                }
+                
+                const isActive = exam.status === 'active';
+                const statusBadgeStyle = isActive 
+                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                    : 'bg-slate-100 text-slate-500 border border-slate-200';
+
+                grid.innerHTML += `
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex flex-col justify-between transition-all hover:shadow-sm">
+                        <div>
+                            <div class="flex justify-between items-start gap-4 mb-4">
+                                <h3 class="font-black text-slate-800 text-lg leading-snug truncate">${exam.title || "Untitled Evaluation Exam"}</h3>
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0 ${statusBadgeStyle}">
+                                    ${exam.status || 'inactive'}
+                                </span>
+                            </div>
+
+                            <div class="text-xs text-slate-600 space-y-2 mb-6 font-medium bg-slate-50/70 border border-slate-100 p-4 rounded-2xl">
+                                <p class="flex items-center gap-2"><i data-lucide="user" class="text-slate-400" size="14"></i> <span>Author: <b class="text-slate-800">${creator.name || 'System Admin'}</b> (${creator.role || 'N/A'})</span></p>
+                                <p class="flex items-center gap-2"><i data-lucide="briefcase" class="text-slate-400" size="14"></i> <span>Dept. Target: <span class="text-slate-700">${creator.department || 'N/A'}</span></span></p>
+                                <p class="flex items-center gap-2"><i data-lucide="hash" class="text-slate-400" size="14"></i> <span>Issuer Staff ID: <span class="font-mono text-slate-700">${creator.id || 'N/A'}</span></span></p>
+                                <p class="flex items-center gap-2"><i data-lucide="calendar" class="text-slate-400" size="14"></i> <span>Created On: <span class="text-slate-700">${date}</span></span></p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 border-t border-slate-100 pt-4">
+                            <button onclick="toggleStatus('${d.id}', '${exam.status}')" class="flex-1 py-3 px-4 bg-slate-100 rounded-xl font-black text-xs uppercase tracking-wider text-slate-600 hover:bg-slate-200 transition-colors">
+                                ${isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button onclick="window.location.href='ExamTemplate.html?editId=${d.id}'" class="flex-1 py-3 px-4 bg-purple-600 text-white rounded-xl font-black text-xs uppercase tracking-wider hover:bg-purple-700 transition-colors shadow-xs flex items-center justify-center gap-1.5">
+                                <i data-lucide="edit-3" size="13"></i> Edit Configuration
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            lucide.createIcons();
+        }
+
+        // Global context execution registration binding wrapper links
+        window.toggleStatus = async (id, currentStatus) => {
+            const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+            try {
+                await updateDoc(doc(db, "qc_exams", id), { status: newStatus });
+                await loadExams();
+            } catch (err) {
+                console.error("Status Change Toggle Request Error:", err);
+                alert("Failed to modify exam visibility control parameters.");
+            }
+        };
+
+        // Initialize execution sequence
+        initPage();
+    </script>
+</body>
+</html>

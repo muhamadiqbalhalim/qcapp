@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Exam | QC Team</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased">
+
+    <div class="max-w-3xl mx-auto p-4 md:p-8">
+        <div class="flex justify-between items-center mb-8 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <h1 id="examTitle" class="text-xl font-black text-slate-800">Loading Exam...</h1>
+            <div id="timer" class="font-black text-red-600 bg-red-50 px-4 py-2 rounded-xl tracking-wider text-sm">--:--</div>
+        </div>
+
+        <div id="examContainer" class="space-y-6"></div>
+
+        <div id="reviewerSection" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mt-8 space-y-6 hidden">
+            <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+                <i data-lucide="users" class="text-blue-600" size="18"></i> Assignment Sign-off Channels
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-black mb-2 text-slate-500 uppercase tracking-wider">Select Executive Reviewer</label>
+                    <select id="executiveSelect" class="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 text-slate-800 focus:border-blue-500 focus:bg-white outline-none transition-all text-sm">
+                        <option value="">Select Executive</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-black mb-2 text-slate-500 uppercase tracking-wider">Select Leader Reviewer</label>
+                    <select id="leaderSelect" class="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 text-slate-800 focus:border-blue-500 focus:bg-white outline-none transition-all text-sm">
+                        <option value="">Select Leader</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <button id="submitBtn" onclick="submitExam()" class="w-full py-5 mt-8 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-600/20 active:scale-[0.99] transition-all hidden">
+            Submit Exam Paper
+        </button>
+    </div>
+
+    <script type="module">
+        import { db } from './js/FirebaseConfig.js';
+        import { doc, getDoc, getDocs, collection, addDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { RoleManager } from './js/Roles.js';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const examId = urlParams.get('id')?.trim();
+        const session = JSON.parse(localStorage.getItem('session'));
+        
+        if (!session) RoleManager.forceLogout();
+
+        let timerInterval = null;
+
+        async function initExamPage() {
+            try {
+                if (!examId) {
+                    alert("Invalid parameters: Missing exam identity identifier.");
+                    window.location.href = 'ExamList.html';
+                    return;
+                }
+
+                // 1. LOCK LOGIC
+                const subQuery = query(
+                    collection(db, "exam_submissions"), 
+                    where("examId", "==", examId), 
+                    where("operatorId", "==", String(session.employeeId || "Unknown"))
+                );
+                const subSnap = await getDocs(subQuery);
+                
+                if (!subSnap.empty) {
+                    alert("Access Denied: You have already submitted this exam or have a verification task currently pending review.");
+                    localStorage.removeItem(`exam_end_time_${examId}`);
+                    window.location.href = 'ExamList.html';
+                    return;
+                }
+
+                // 2. LOAD DATA PEGAWAI
+                const execSelect = document.getElementById('executiveSelect');
+                const leaderSelect = document.getElementById('leaderSelect');
+                const usersSnap = await getDocs(collection(db, "users"));
+
+                usersSnap.forEach(docSnap => {
+                    const user = docSnap.data();
+                    const role = (user.qcRole || "").trim().toUpperCase();
+
+                    if (role === "EXECUTIVE") {
+                        const opt = document.createElement('option');
+                        opt.value = docSnap.id;
+                        opt.textContent = `${user.name || docSnap.id}`;
+                        execSelect.appendChild(opt);
+                    }
+                    if (role === "QC_LEADER") {
+                        const opt = document.createElement('option');
+                        opt.value = docSnap.id;
+                        opt.textContent = `${user.name || docSnap.id}`;
+                        leaderSelect.appendChild(opt);
+                    }
+                });
+
+                // 3. LOAD DATA KANDUNGAN SOALAN EXAM
+                const snap = await getDoc(doc(db, "qc_exams", examId));
+                if (!snap.exists()) { 
+                    alert("Error: The requested examination template does not exist."); 
+                    window.location.href = 'ExamList.html'; 
+                    return; 
+                }
+                
+                const examData = snap.data();
+                document.getElementById('examTitle').innerText = examData.title;
+                window.examData = examData; 
+                
+                renderQuestions(examData.questions);
+                
+                // 4. PERSISTENT TIMER MANAGEMENT
+                const storageKey = `exam_end_time_${examId}`;
+                let targetEndTime = localStorage.getItem(storageKey);
+                const now = Date.now();
+
+                if (!targetEndTime) {
+                    const limitMinutes = examData.timeLimitMinutes || 15;
+                    targetEndTime = now + (limitMinutes * 60 * 1000);
+                    localStorage.setItem(storageKey, targetEndTime);
+                } else {
+                    targetEndTime = parseInt(targetEndTime, 10);
+                }
+
+                let timeLeftSeconds = Math.floor((targetEndTime - now) / 1000);
+
+                if (timeLeftSeconds <= 0) {
+                    alert("Time has already expired for this session! Submitting paper automatically.");
+                    localStorage.removeItem(storageKey);
+                    submitExam(true);
+                    return;
+                }
+
+                startTimer(timeLeftSeconds, storageKey);
+                
+                document.getElementById('reviewerSection').classList.remove('hidden');
+                document.getElementById('submitBtn').classList.remove('hidden');
+                lucide.createIcons();
+
+            } catch (err) { 
+                console.error("Critical Failure Loading Page Framework:", err); 
+            }
+        }
+
+        function renderQuestions(questions) {
+            const container = document.getElementById('examContainer');
+            if (!questions || questions.length === 0) {
+                container.innerHTML = `<p class='text-sm text-slate-400 font-bold py-6 text-center'>No questions inside this exam package.</p>`;
+                return;
+            }
+            
+            questions.forEach((q, index) => {
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm question-block" data-index="${index}">
+                        ${q.imageUrl ? `<img src="${q.imageUrl}" class="w-full max-h-72 object-contain rounded-2xl mb-4 bg-slate-50 border border-slate-100" alt="Defect Sample">` : ''}
+                        <h4 class="font-black text-slate-800 text-base mb-4"><span class="text-blue-600 mr-1">Q${index + 1}.</span> ${q.text}</h4>
+                        <div class="space-y-2.5">
+                            ${q.options.map((opt, i) => {
+                                const letter = String.fromCharCode(65 + i);
+                                return `
+                                    <label class="flex items-center p-3.5 border-2 border-slate-100 rounded-2xl cursor-pointer hover:bg-slate-50 hover:border-slate-200 transition-all text-sm font-semibold text-slate-700">
+                                        <input type="radio" name="q${index}" value="${letter}" class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500 mr-3">
+                                        <span class="font-black text-slate-400 mr-1.5">${letter})</span> ${opt}
+                                    </label>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function startTimer(timeLeft, storageKey) {
+            const timerDisplay = document.getElementById('timer');
+            
+            const updateDisplay = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                timerDisplay.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+                
+                if (seconds <= 120) {
+                    timerDisplay.className = "font-black text-red-600 bg-red-50 px-4 py-2 rounded-xl tracking-wider text-sm animate-pulse";
+                }
+            };
+
+            updateDisplay(timeLeft);
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft <= 0) { 
+                    clearInterval(timerInterval); 
+                    timerDisplay.innerText = "0:00";
+                    localStorage.removeItem(storageKey);
+                    alert("Time's up! Your answers will be automatically finalized and locked.");
+                    submitExam(true); 
+                } else {
+                    updateDisplay(timeLeft);
+                }
+            }, 1000);
+        }
+
+        window.submitExam = async (isTimeOut = false) => {
+            const executiveSelect = document.getElementById('executiveSelect');
+            const leaderSelect = document.getElementById('leaderSelect');
+            
+            const executiveId = executiveSelect ? executiveSelect.value : "";
+            const leaderId = leaderSelect ? leaderSelect.value : "";
+
+            if (!isTimeOut && (!executiveId || !leaderId)) {
+                alert("Please select both Executive and Leader Reviewers before submitting your paper!");
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerText = "Locking & Submitting Record...";
+
+            if (timerInterval) clearInterval(timerInterval);
+            localStorage.removeItem(`exam_end_time_${examId}`);
+
+            let score = 0;
+            const totalQuestions = window.examData?.questions?.length || 0;
+            const userResults = {};
+
+            if (totalQuestions > 0) {
+                window.examData.questions.forEach((q, index) => {
+                    const selected = document.querySelector(`input[name="q${index}"]:checked`);
+                    const chosenValue = selected ? selected.value : "";
+                    userResults[`q${index}`] = chosenValue;
+                    if (chosenValue === q.correct) score++;
+                });
+            }
+
+            const finalMark = totalQuestions > 0 ? ((score / totalQuestions) * 100).toFixed(1) : 0;
+            const parsedFinalMark = parseFloat(finalMark);
+            
+            try {
+                // 1. Serahan Utama Dokumen Peperiksaan untuk Aliran Kerja Kelulusan
+                await addDoc(collection(db, "exam_submissions"), {
+                    examId: examId, 
+                    examName: window.examData.title || "QC Exam",
+                    operatorId: String(session.employeeId || "Unknown"),
+                    operatorName: session.name || "QC Operator",
+                    marks: parsedFinalMark,
+                    results: userResults,
+                    executiveId: executiveId,
+                    leaderId: leaderId,
+                    status: 'pending_leader',
+                    submittedAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+
+                // 2. JAMBATAN INTEGRASI DATA KEMAHIRAN (Dihubungkan ke modul SkillsChart)
+                await addDoc(collection(db, "exam_results"), {
+                    operatorId: String(session.employeeId || "Unknown"),
+                    operatorName: session.name || "QC Operator",
+                    examId: examId,
+                    examTitle: window.examData.title || "QC Exam",
+                    score: parsedFinalMark,
+                    submittedAt: serverTimestamp()
+                });
+
+                alert(`Exam Submitted Successfully! Paper has been locked. Grade score processed.`);
+                window.location.href = 'ExamList.html';
+            } catch (err) {
+                console.error("Database persistence failure:", err);
+                alert("Submission pipeline failure: " + err.message);
+                btn.disabled = false;
+                btn.innerText = "Submit Exam Paper";
+            }
+        };
+
+        initExamPage();
+    </script>
+</body>
+</html>

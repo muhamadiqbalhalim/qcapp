@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QC Team | Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[28rem] h-[28rem] rounded-full blur-[100px] opacity-10 bg-blue-300"></div>
+        <div class="absolute bottom-[-15%] right-[-10%] w-[24rem] h-[24rem] rounded-full blur-[100px] opacity-10 bg-amber-300"></div>
+    </div>
+
+    <div class="min-h-screen w-full flex items-center justify-center p-4 md:p-8 relative z-10">
+        <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            
+            <div class="hidden lg:flex flex-col justify-center space-y-8">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center">
+                        <i data-lucide="shield-check" class="text-slate-950"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-black text-2xl tracking-wide">QC Team</h1>
+                        <p class="text-xs opacity-50 uppercase tracking-[0.25em]">Enterprise QC Platform</p>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-amber-500 font-black uppercase tracking-[0.35em] text-xs mb-5">Manufacturing Workforce</p>
+                    <h2 class="text-6xl font-black leading-tight">QC Training & <br>Competency Management.</h2>
+                </div>
+            </div>
+
+            <div class="w-full flex justify-center lg:justify-end">
+                <div class="w-full max-w-[430px] rounded-3xl border border-slate-200 bg-white/90 p-8 md:p-10 backdrop-blur-xl shadow-2xl">
+                    <h3 class="text-3xl font-black mb-8">Welcome Back</h3>
+                    
+                    <form id="loginForm" class="space-y-5">
+                        <div class="relative">
+                            <i data-lucide="user" class="absolute left-4 top-1/2 -translate-y-1/2 opacity-40"></i>
+                            <input type="text" id="empId" placeholder="Employee ID" required 
+                                class="w-full pl-12 pr-4 py-4 rounded-2xl border bg-white focus:border-amber-500 outline-none transition-all">
+                        </div>
+                        
+                        
+
+                        <div id="errorMsg" class="text-red-500 text-sm font-semibold hidden"></div>
+
+                        <button type="submit" id="submitBtn" class="w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 font-black uppercase tracking-widest transition-all">
+                            Access Portal
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/FirebaseConfig.js';
+        import {
+            collection,
+            query,
+            where,
+            getDocs,
+            updateDoc,
+            doc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";        import { RoleManager } from "./js/Roles.js";
+
+        // 1. Cek sesi sedia ada (Redirect jika sudah login)
+        RoleManager.handleLoginRedirect();
+
+        const loginForm = document.getElementById('loginForm');
+        const empInput = document.getElementById('empId');
+        const errorMsg = document.getElementById('errorMsg');
+
+        // Submit Login Logic
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const id = empInput.value.trim().toUpperCase();
+            
+            btn.innerText = "Loading...";
+            btn.disabled = true;
+            errorMsg.classList.add('hidden');
+            
+            try {
+                // 1. Fetch User Data from Firestore
+                const q = query(collection(db, 'users'), where("employeeId", "==", id));
+                const snap = await getDocs(q);
+                
+                if (snap.empty) {
+                    errorMsg.innerText = "Employee ID not found in database.";
+                    errorMsg.classList.remove('hidden');
+                    btn.disabled = false;
+                } else {
+const userData = snap.docs[0].data();
+
+// Check QC Access
+if (!userData.qcRole) {
+
+    errorMsg.innerText =
+        "Your QC account has not been activated. Please contact QC Executive.";
+
+    errorMsg.classList.remove("hidden");
+    return;
+
+}
+
+if (!userData.qcStatus || userData.qcStatus === "PENDING") {
+
+    errorMsg.innerText =
+        "Your QC account is pending activation. Please contact QC Executive.";
+
+    errorMsg.classList.remove("hidden");
+
+    return;
+
+}
+
+if (userData.qcStatus === "DISABLED") {
+
+    errorMsg.innerText =
+        "Your QC account has been disabled.";
+
+    errorMsg.classList.remove("hidden");
+
+    return;
+
+}
+
+    // ======================================================
+    // Update Last Login
+    // ======================================================
+
+    await updateDoc(
+        doc(db, "users", snap.docs[0].id),
+        {
+            lastLogin: serverTimestamp()
+        }
+    );
+
+    // ======================================================
+    // Save Session
+    // ======================================================
+
+    sessionStorage.setItem("qc_logged_in_user", id);
+
+    localStorage.setItem("qc_logged_in_user", id);
+
+    localStorage.setItem(
+        "session",
+        JSON.stringify({
+
+            ...userData,
+
+            id: snap.docs[0].id,
+
+            role: userData.qcRole
+
+        })
+    );
+
+    // ======================================================
+    // Redirect
+    // ======================================================
+
+    RoleManager.redirectToRespectiveDashboard(
+        userData.qcRole
+    );
+             }
+            } catch (err) {
+                console.error("Login Error:", err);
+                errorMsg.innerText = "Connection error. Please try again.";
+                errorMsg.classList.remove('hidden');
+            } finally {
+                btn.innerText = "Access Portal";
+                btn.disabled = false;
+            }
+        });
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>

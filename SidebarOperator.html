@@ -1,0 +1,70 @@
+<aside class="w-full md:w-64 bg-white border-b md:border-r border-slate-200 p-6 flex flex-col justify-between h-full min-h-screen">
+    <div>
+        <div class="font-black text-xl text-blue-600 flex items-center gap-2 mb-8">
+            <i data-lucide="sparkles" class="text-blue-500"></i>
+            QC Team
+        </div>
+
+        <nav class="flex flex-col space-y-6 w-full">
+
+            <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3">
+                    Overview
+                </p>
+
+                <a id="nav-dashboard"
+                   href="QGOperatorDashboard.html"
+                   data-path="QGOperatorDashboard.html"
+                   class="nav-link flex items-center gap-3 w-full p-3 font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors">
+                    <i data-lucide="layout-dashboard" size="20"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+
+            <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3">
+                    Training
+                </p>
+
+                <a id="nav-training"
+                   href="TrainingList.html"
+                   data-path="TrainingList.html"
+                   class="nav-link flex items-center gap-3 w-full p-3 font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors">
+                    <i data-lucide="book-open" size="20"></i>
+                    <span>My Trainings</span>
+                </a>
+
+                <a id="nav-exams"
+                   href="ExamList.html"
+                   data-path="ExamList.html"
+                   class="nav-link flex items-center gap-3 w-full p-3 font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors">
+                    <i data-lucide="file-text" size="20"></i>
+                    <span>My Exams</span>
+                </a>
+            </div>
+
+            <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3">
+                    Quality
+                </p>
+
+                <a id="nav-inspection"
+                   href="InspectionList.html"
+                   data-path="InspectionList.html"
+                   class="nav-link flex items-center gap-3 w-full p-3 font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors">
+                    <i data-lucide="clipboard-list" size="20"></i>
+                    <span>My Inspections</span>
+                </a>
+            </div>
+
+        </nav>
+    </div>
+
+    <div class="pt-6 border-t border-slate-100">
+        <button id="logoutBtn"
+                class="flex items-center gap-3 w-full p-3 font-bold text-red-500 hover:bg-red-50 rounded-xl transition-colors text-left">
+            <i data-lucide="log-out" size="20"></i>
+            <span>Logout</span>
+        </button>
+    </div>
+</aside>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build Exam Template | QC Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+
+    <div id="main-content" style="display: none;">
+        <div class="flex flex-col md:flex-row min-h-screen">
+            <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+
+            <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+                <header class="mb-8 border-b border-slate-100 pb-5">
+                    <p class="text-xs uppercase tracking-[0.15em] text-purple-600 font-black mb-1">Assessment Builder</p>
+                    <h1 id="headerTitle" class="text-3xl md:text-4xl font-black tracking-tight text-slate-800">Create New Exam</h1>
+                    <p class="text-slate-400 font-medium text-xs mt-1">Configure criteria thresholds, target constraints, and input question evaluation models.</p>
+                </header>
+
+                <div class="max-w-4xl space-y-6">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+                        <div>
+                            <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Exam Title Configuration</label>
+                            <input type="text" id="examTitle" placeholder="e.g., Visual Defect Inspection - Level 1" class="w-full text-base font-bold p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 outline-none focus:bg-white focus:ring-2 focus:ring-purple-100 transition-all">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Time Allocated (Minutes)</label>
+                                <input type="number" id="timeLimit" min="1" placeholder="e.g., 30" class="w-full p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 outline-none focus:bg-white focus:ring-2 focus:ring-purple-100 transition-all font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Passing Threshold Mark (%)</label>
+                                <input type="number" id="passingMark" min="1" max="100" placeholder="e.g., 80" class="w-full p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 outline-none focus:bg-white focus:ring-2 focus:ring-purple-100 transition-all font-bold">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="questionContainer" class="space-y-6">
+                        </div>
+
+                    <div class="space-y-3 pt-2">
+                        <button onclick="addQuestion()" class="w-full py-4 border-2 border-dashed border-slate-300 text-slate-400 hover:text-purple-600 hover:border-purple-400 font-black rounded-2xl transition-all flex items-center justify-center gap-2 bg-white/50 text-sm">
+                            <i data-lucide="plus" size="18"></i> Add New Question Block
+                        </button>
+
+                        <button id="saveBtn" onclick="saveExam()" class="w-full py-4 bg-purple-600 text-white font-black rounded-2xl hover:bg-purple-700 shadow-xs transition-colors text-sm uppercase tracking-wider">
+                            Publish Assessment Exam
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="loading" class="flex justify-center items-center h-screen bg-[#F8FAFC]">
+        <div class="text-center">
+            <i data-lucide="loader-2" class="animate-spin text-purple-600 mx-auto" size="40"></i>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-3">Initializing Workspace Studio...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/FirebaseConfig.js';
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+        import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { loadSidebar } from './js/sidebar-loader.js';
+        import { ROLES, RoleManager } from './js/Roles.js';
+
+        // Strict Enforcement Validation Lock
+        RoleManager.enforceStrictSession();
+        RoleManager.protectPage(ROLES.QC_LEADER, ROLES.EXECUTIVE);
+
+        const storage = getStorage();
+        const session = JSON.parse(localStorage.getItem('session'));
+        const editId = new URLSearchParams(window.location.search).get('editId');
+        let questionCount = 0;
+
+        async function initPage() {
+            try {
+                const targetSidebar = session.role === ROLES.EXECUTIVE ? 'SidebarExecutive.html' : 'SidebarLeader.html';
+                await loadSidebar(targetSidebar);
+
+                if (editId) {
+                    await loadExistingExam();
+                } else {
+                    // Default load block if building an empty form setup template
+                    addQuestion();
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                lucide.createIcons();
+            } catch (err) {
+                console.error("Layout Template Builder Core Failure:", err);
+                alert("Critical security initialization error map setup.");
+            }
+        }
+
+        async function loadExistingExam() {
+            document.getElementById('headerTitle').innerText = "Modify Assessment Profile";
+            document.getElementById('saveBtn').innerText = "Update Assessment Configuration";
+            
+            const snap = await getDoc(doc(db, "qc_exams", editId));
+            if (snap.exists()) {
+                const data = snap.data();
+                document.getElementById('examTitle').value = data.title || "";
+                document.getElementById('timeLimit').value = data.timeLimitMinutes || "";
+                document.getElementById('passingMark').value = data.passingMark || "";
+
+                if (data.questions && data.questions.length > 0) {
+                    data.questions.forEach((q) => addQuestion(q));
+                } else {
+                    addQuestion();
+                }
+            }
+        }
+
+        window.addQuestion = (qData = null) => {
+            questionCount++;
+            const container = document.getElementById('questionContainer');
+            const div = document.createElement('div');
+            div.className = "bg-white p-5 rounded-3xl border border-slate-200 shadow-xs question-block space-y-4 relative transition-all";
+            
+            // Standardizing array retrieval context safely fallback values
+            const opts = qData?.options || ["", "", "", ""];
+            // Adapt to map indexes string/number mapping validation safely updates
+            const correctSelection = qData?.correctAnswer !== undefined ? qData.correctAnswer : (qData?.correct || 0);
+
+            div.innerHTML = `
+                <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                    <span class="font-black text-xs text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md tracking-wider uppercase">Question Layer Blocks</span>
+                    <button type="button" onclick="this.closest('.question-block').remove(); restyleCounters();" class="text-slate-400 hover:text-red-500 transition-colors p-1">
+                        <i data-lucide="trash-2" size="16"></i>
+                    </button>
+                </div>
+                
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Question Description Text</label>
+                    <input type="text" value="${qData?.questionText || qData?.text || ''}" placeholder="Type question details..." class="q-text w-full p-3 rounded-xl border border-slate-200 bg-slate-50/40 outline-none focus:bg-white text-xs font-bold">
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Visual Asset Upload Reference (Optional)</label>
+                    <input type="file" accept="image/*" onchange="validateFileSize(this)" class="q-image-upload w-full p-2 border border-slate-200 rounded-xl text-xs bg-slate-50/40 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 file:cursor-pointer">
+                    ${qData?.imageUrl ? `<p class="text-[10px] text-purple-600 font-bold flex items-center gap-1 mt-1">📋 Live Link Attached Asset: <a href="${qData.imageUrl}" target="_blank" class="underline hover:text-purple-800">Review Image</a></p>` : ''}
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option A</label>
+                        <input type="text" value="${opts[0] || ''}" placeholder="Value choice option A" class="q-a w-full p-2.5 rounded-xl border border-slate-200 text-xs font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option B</label>
+                        <input type="text" value="${opts[1] || ''}" placeholder="Value choice option B" class="q-b w-full p-2.5 rounded-xl border border-slate-200 text-xs font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option C</label>
+                        <input type="text" value="${opts[2] || ''}" placeholder="Value choice option C" class="q-c w-full p-2.5 rounded-xl border border-slate-200 text-xs font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option D</label>
+                        <input type="text" value="${opts[3] || ''}" placeholder="Value choice option D" class="q-d w-full p-2.5 rounded-xl border border-slate-200 text-xs font-medium">
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Correct Baseline Solution Key</span>
+                    <select class="q-correct text-xs font-bold text-slate-700 bg-white border border-slate-200 p-2 rounded-xl outline-none focus:ring-1 focus:ring-purple-200">
+                        <option value="0" ${correctSelection == 0 ? 'selected' : ''}>Option A</option>
+                        <option value="1" ${correctSelection == 1 ? 'selected' : ''}>Option B</option>
+                        <option value="2" ${correctSelection == 2 ? 'selected' : ''}>Option C</option>
+                        <option value="3" ${correctSelection == 3 ? 'selected' : ''}>Option D</option>
+                    </select>
+                </div>
+            `;
+            if (qData?.imageUrl) div.dataset.imageUrl = qData.imageUrl;
+            container.appendChild(div);
+            lucide.createIcons();
+        };
+
+        window.validateFileSize = (input) => {
+            if (input.files && input.files[0]) {
+                if (input.files[0].size > 5 * 1024 * 1024) { // 5MB limit
+                    alert("Image attachment structure profile payload size cannot cross maximum ceiling of 5MB!");
+                    input.value = "";
+                }
+            }
+        };
+
+        window.restyleCounters = () => {
+            // Internal counter sync adjustments tags context references if deleted blocks
+            const blocks = document.querySelectorAll('.question-block');
+            questionCount = blocks.length;
+        };
+
+        window.saveExam = async () => {
+            const title = document.getElementById('examTitle').value.trim();
+            const timeLimit = parseInt(document.getElementById('timeLimit').value);
+            const passingMark = parseInt(document.getElementById('passingMark').value);
+            const questionBlocks = document.querySelectorAll('.question-block');
+
+            if (!title || !timeLimit || !passingMark) {
+                alert("Please fill out all basic assessment parameter metadata profiles cleanly.");
+                return;
+            }
+
+            if (questionBlocks.length === 0) {
+                alert("You cannot instantiate an evaluation module sheet without questions!");
+                return;
+            }
+
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.innerText = editId ? "Committing Configuration Changes..." : "Injecting Data Pipeline Blueprint...";
+            saveBtn.disabled = true;
+
+            try {
+                const questions = [];
+
+                for (let el of questionBlocks) {
+                    let imageUrl = el.dataset.imageUrl || null;
+                    const fileInput = el.querySelector('.q-image-upload');
+                    const qText = el.querySelector('.q-text').value.trim();
+                    const optA = el.querySelector('.q-a').value.trim();
+                    const optB = el.querySelector('.q-b').value.trim();
+                    const optC = el.querySelector('.q-c').value.trim();
+                    const optD = el.querySelector('.q-d').value.trim();
+                    const correctIdx = parseInt(el.querySelector('.q-correct').value);
+
+                    if (!qText || !optA || !optB || !optC || !optD) {
+                        throw new Error("One or more question blocks contain unconfigured description text grids or choices missing.");
+                    }
+
+                    if (fileInput.files.length > 0) {
+                        const file = fileInput.files[0];
+                        const storageRef = ref(storage, 'exam_images/' + Date.now() + '_' + file.name);
+                        await uploadBytes(storageRef, file);
+                        imageUrl = await getDownloadURL(storageRef);
+                    }
+
+                    questions.push({
+                        questionText: qText,
+                        options: [optA, optB, optC, optD],
+                        correctAnswer: correctIdx,
+                        imageUrl: imageUrl
+                    });
+                }
+
+                const examData = {
+                    title: title,
+                    timeLimitMinutes: timeLimit,
+                    passingMark: passingMark,
+                    questions: questions,
+                    status: 'active',
+                    updatedAt: serverTimestamp(),
+                    createdBy: {
+                        name: session?.name || 'Admin',
+                        department: session?.department || 'QC',
+                        id: String(session?.employeeId || 'N/A'),
+                        role: session?.role || 'QC Leader'
+                    }
+                };
+
+                if (editId) {
+                    await updateDoc(doc(db, "qc_exams", editId), examData);
+                    alert("Assessment dynamic specification bundle updated inside registry matrix.");
+                } else {
+                    examData.createdAt = serverTimestamp();
+                    await addDoc(collection(db, "qc_exams"), examData);
+                    alert("Assessment dynamic template created and synced across live stream channels.");
+                }
+
+                window.location.href = "ExamManager.html";
+            } catch (e) {
+                console.error(e);
+                alert(e.message);
+                saveBtn.innerText = editId ? "Update Assessment Configuration" : "Publish Assessment Exam";
+                saveBtn.disabled = false;
+            }
+        };
+
+        initPage();
+    </script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Attendance | QC Nexus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+
+        <main class="flex-1 p-4 md:p-8 overflow-y-auto flex items-center justify-center">
+            <div class="max-w-xl w-full space-y-6">
+                
+                <div>
+                    <p class="text-xs uppercase tracking-[0.3em] text-blue-600 font-black mb-1">Training Attendance</p>
+                    <h1 class="text-3xl font-black tracking-tight">Attendance Hub</h1>
+                    <p class="text-slate-500 text-sm mt-1">Submit attendance for your registered trainings by uploading verification proof.</p>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
+                    <h2 class="text-2xl font-black text-center text-slate-800 mb-6">Confirm Attendance</h2>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Staff Name</label>
+                            <input id="userName" disabled class="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-600 outline-none cursor-not-allowed" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Staff ID</label>
+                            <input id="userStaffId" disabled class="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-600 outline-none cursor-not-allowed" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Select Training Session</label>
+                        <select id="trainingSelect" class="w-full p-3.5 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-100">
+                            <option value="">-- Choose Active Session --</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-5">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Training Date</label>
+                        <input id="trainingDate" disabled class="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 font-medium outline-none cursor-not-allowed" placeholder="Select training above to view date" />
+                    </div>
+
+                    <div class="mt-5 border-t border-slate-100 pt-4">
+                        <label class="block text-sm font-bold mb-2 text-slate-700 flex items-center gap-1.5">
+                            <i data-lucide="camera" class="text-blue-500" size="18"></i> Upload Attendance Proof (Photo)
+                        </label>
+                        <input type="file" id="proofImage" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 file:font-bold hover:file:bg-blue-100 cursor-pointer" />
+                        <img id="imagePreview" class="mt-4 w-full h-48 rounded-2xl object-cover border border-slate-200 shadow-xs hidden" />
+                    </div>
+
+                    <button id="submitBtn" class="mt-6 w-full bg-emerald-500 hover:bg-emerald-600 text-white py-4 rounded-xl font-black tracking-wide shadow-sm transition-all flex justify-center items-center gap-2">
+                        Check In
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { db, storage } from './js/FirebaseConfig.js';
+        import { collection, getDocs, query, where, addDoc, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+        import { ROLES, RoleManager } from "./js/Roles.js";
+        import { loadSidebar } from './js/sidebar-loader.js';
+
+        // Kawalan Sekatan Sesi Tegas
+        RoleManager.enforceStrictSession();
+        
+        // PENTING: ProtectPage dibuang supaya Operator, Leader, & Executive semuanya boleh hantar kehadiran sendiri.
+        // RoleManager.protectPage(ROLES.QG_OPERATOR);
+
+        const user = JSON.parse(localStorage.getItem("session"));
+        let registrations = [];
+        let selectedTraining = null;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const trainingIdFromUrl = urlParams.get('id');
+
+        async function init() {
+            // Muatkan Fail Sidebar dinamik mengikut peranan akaun semasa yang sedang buka
+            const targetSidebar = user.role === ROLES.EXECUTIVE ? 'SidebarExecutive.html' : (user.role === ROLES.QC_LEADER ? 'SidebarLeader.html' : 'SidebarOperator.html');
+            await loadSidebar(targetSidebar);
+
+            document.getElementById('userName').value = user.name;
+            document.getElementById('userStaffId').value = user.employeeId;
+
+            console.log("Mencari registration untuk staffId:", String(user.employeeId));
+
+            // Tapis pendaftaran yang BELUM hadir (attendanceStatus == PENDING)
+            const q = query(
+                collection(db, "training_registrations"),
+                where("staffId", "==", String(user.employeeId)),
+                where("attendanceStatus", "==", "PENDING")
+            );            
+            const snapshot = await getDocs(q);
+            
+            console.log("Jumlah dokumen dijumpai:", snapshot.size);
+
+            const select = document.getElementById('trainingSelect');
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                registrations.push({ id: docSnap.id, ...data });
+                
+                const opt = document.createElement('option');
+                opt.value = data.trainingId;
+                opt.textContent = data.trainingName;
+                select.appendChild(opt);
+            });
+
+            // Logik jika pengguna melompat masuk membawa ID daripada kalendar (?id=XXX)
+            if (trainingIdFromUrl) {
+                select.value = trainingIdFromUrl;
+                handleSelectChange({ target: { value: trainingIdFromUrl } });
+            }
+
+            lucide.createIcons();
+        }
+
+        // Tukar Tarikh Sesi Mengikut Dropdown Pilihan
+        function handleSelectChange(e) {
+            selectedTraining = registrations.find(item => item.trainingId === e.target.value);
+            document.getElementById('trainingDate').value = selectedTraining ? selectedTraining.trainingDate : '';
+        }
+
+        document.getElementById('trainingSelect').addEventListener('change', handleSelectChange);
+
+        // Kawalan Pratonton Gambar & Tapisan Validasi Fail
+        document.getElementById('proofImage').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // 1. Validasi Saiz Maksimum (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert("Maximum file size is 5MB.");
+                e.target.value = ""; // Reset input
+                document.getElementById('imagePreview').classList.add('hidden');
+                return;
+            }
+
+            // 2. Validasi Format Fail
+            const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+            if (!allowedTypes.includes(file.type)) {
+                alert("Only JPG and PNG files are allowed.");
+                e.target.value = ""; // Reset input
+                document.getElementById('imagePreview').classList.add('hidden');
+                return;
+            }
+
+            // Papar imej jika lulus tapisan
+            document.getElementById('imagePreview').src = URL.createObjectURL(file);
+            document.getElementById('imagePreview').classList.remove('hidden');
+        });
+
+        // Hantar Pengesahan Kehadiran Akhir
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            if (!selectedTraining) return alert('Please select a training session.');
+            
+            const file = document.getElementById('proofImage').files[0];
+            if (!file) return alert('Please upload an attendance photo.');
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `
+                <i data-lucide="loader-2" class="animate-spin"></i>
+                <span>Submitting...</span>
+            `;
+            lucide.createIcons();
+
+            try {
+                // 1. Semakan gandaan pertindihan rekod dalam training_attendance
+                const existingAttendance = await getDocs(
+                    query(
+                        collection(db, "training_attendance"),
+                        where("staffId", "==", String(user.employeeId)),
+                        where("trainingId", "==", selectedTraining.trainingId)
+                    )
+                );
+
+                if (!existingAttendance.empty) {
+                    alert("You have already submitted attendance for this training.");
+                    window.location.reload();
+                    return;
+                }
+
+                // 2. Muat naik gambar bukti ke Firebase Storage
+                const imageRef = ref(storage, `training_proofs/${user.employeeId}_${selectedTraining.trainingId}_${Date.now()}`);
+                await uploadBytes(imageRef, file);
+                const proofImageUrl = await getDownloadURL(imageRef);
+
+                // 3. Tambah rekod baru ke koleksi 'training_attendance'
+                await addDoc(collection(db, 'training_attendance'), {
+                    department: user.department,
+                    fullName: user.name,
+                    staffId: String(user.employeeId),
+                    trainingDate: selectedTraining.trainingDate,
+                    trainingId: selectedTraining.trainingId,
+                    trainingName: selectedTraining.trainingName,
+                    proofImageUrl: proofImageUrl,
+                    attendanceStatus: 'ATTENDED',
+                    userId: user.userId || "",
+                    submittedDate: new Date().toLocaleString(),
+                    timestamp: serverTimestamp()
+                });
+                
+                // 4. Kemas kini status dalam 'training_registrations' kepada ATTENDED
+                await updateDoc(doc(db, "training_registrations", selectedTraining.id), {
+                    attendanceStatus: "ATTENDED"
+                });
+
+                alert('Attendance submitted successfully!');
+                
+                // Hantar pengguna pulang ke Dashboard asal mengikut role masing-masing
+                const dashboardMap = {
+                    "EXECUTIVE": "QCExecutiveDashboard.html",
+                    "QC_LEADER": "QCLeaderDashboard.html",
+                    "QG_OPERATOR": "QGOperatorDashboard.html"
+                };
+                const targetDashboard = dashboardMap[user.role] || 'QGOperatorDashboard.html';
+                window.location.replace(targetDashboard);
+                
+            } catch (e) {
+                console.error("Ralat Penghantaran:", e);
+                alert('Failed to submit attendance. Connection server error.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "Check In";
+                lucide.createIcons();
+            }
+        });
+
+        // Jalankan sistem
+        init();
+    </script>
+</body>
+</html>

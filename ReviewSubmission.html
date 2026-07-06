@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Submissions | QC Team</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased">
+
+    <div id="pinOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1000] flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-[28px] shadow-2xl max-w-sm w-full text-center border border-slate-100">
+            <div class="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-100">
+                <i data-lucide="lock" class="text-amber-600" size="28"></i>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 mb-1">Access Protected</h2>
+            <p class="text-xs text-slate-400 font-bold mb-5 uppercase tracking-wider">Management Authorization Required</p>
+            <input type="password" id="pinInput" maxlength="4" placeholder="••••" 
+                class="w-full text-center text-3xl font-black tracking-[0.5em] py-3.5 rounded-2xl border-2 border-slate-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-50 outline-none mb-4 transition-all bg-slate-50">
+            <button onclick="checkPin()" class="w-full py-4 bg-amber-600 text-white font-black rounded-xl hover:bg-amber-700 shadow-lg shadow-amber-600/20 active:scale-[0.98] transition-all">Unlock Access</button>
+        </div>
+    </div>
+
+    <div id="rejectionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] hidden flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-[24px] shadow-2xl max-w-md w-full border border-slate-100">
+            <h3 class="text-xl font-black text-slate-900 mb-2 flex items-center gap-2">
+                <i data-lucide="message-square-dashed" class="text-red-500"></i> Rejection Feedback
+            </h3>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">State the reason for non-compliance / correction needed</p>
+            <textarea id="rejectionReasonInput" rows="4" placeholder="Example: Incomplete inspection on LH Section Item 2. Please retake the evaluation..."
+                class="w-full p-4 border-2 border-slate-200 rounded-xl font-medium text-sm outline-none focus:border-red-500 focus:ring-4 focus:ring-red-50 transition-all"></textarea>
+            <div class="flex gap-3 mt-4">
+                <button onclick="closeRejectionModal()" class="flex-1 py-3 bg-slate-100 text-slate-600 font-black rounded-xl text-sm hover:bg-slate-200 transition-all">Cancel</button>
+                <button id="confirmRejectBtn" class="flex-1 py-3 bg-red-600 text-white font-black rounded-xl text-sm hover:bg-red-700 transition-all shadow-md shadow-red-600/10">Confirm Reject</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+
+        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+            <header class="mb-8 border-b border-slate-100 pb-5">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="text-3xl md:text-4xl font-black flex items-center gap-3 tracking-tight">
+                            <i data-lucide="file-check" class="text-amber-600"></i> Verification Board
+                        </h1>
+                        <p class="text-slate-500 font-bold text-sm mt-1">Review, crosscheck, and sign off multi-level QA examinations and field inspection audits.</p>
+                    </div>
+                    <div id="roleIndicator" class="text-xs font-black px-4 py-2 rounded-xl border self-start md:self-center shadow-sm uppercase tracking-wider">
+                        Verifying Profile...
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap gap-2 mt-6">
+                    <button onclick="filterSubmissions('all')" id="btn-all" class="px-5 py-2 bg-slate-900 text-white text-xs rounded-xl font-black shadow-sm transition-all">All Submissions</button>
+                    <button onclick="filterSubmissions('exam')" id="btn-exam" class="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all">Peperiksaan (Exams)</button>
+                    <button onclick="filterSubmissions('inspection')" id="btn-inspection" class="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all">Audit Lapangan (Inspections)</button>
+                </div>
+            </header>
+            
+            <div id="submissionGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { db } from './js/FirebaseConfig.js';
+        import { collection, onSnapshot, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { loadSidebar } from './js/sidebar-loader.js';
+        import { RoleManager, ROLES } from './js/Roles.js';
+
+        // 1. Sekatan Keselamatan Ketat Peringkat Atas
+        RoleManager.enforceStrictSession();
+        RoleManager.protectPage(ROLES.QC_LEADER, ROLES.EXECUTIVE);
+
+        const session = JSON.parse(localStorage.getItem("session"));
+        const isLeader = session?.role === ROLES.QC_LEADER;
+
+        // Kumpulkan semua variasi rujukan ID pengguna bagi mengelakkan isu perbezaan kunci data
+        const userIdentifiers = [
+            String(session?.id || '').trim().toLowerCase(),
+            String(session?.uid || '').trim().toLowerCase(),
+            String(session?.employeeId || '').trim().toLowerCase()
+        ].filter(Boolean);
+
+        // Render Lencana Peranan Semasa Manajemen
+        const roleIndicator = document.getElementById('roleIndicator');
+        if (isLeader) {
+            roleIndicator.className += " bg-purple-50 text-purple-700 border-purple-200";
+            roleIndicator.innerText = "Active Role: QC Leader Queue";
+        } else {
+            roleIndicator.className += " bg-amber-50 text-amber-700 border-amber-200";
+            roleIndicator.innerText = "Active Role: Executive Queue";
+        }
+
+        let submissionsMap = { exam: [], inspection: [] };
+        let currentFilterType = 'all';
+        let activeRejectionTarget = null;
+
+        // 2. DAFTAR FUNGSI GLOBAL UNTUK SKOP WINDOW PELAYAR
+        window.checkPin = () => {
+            if (document.getElementById('pinInput').value === "9999") { 
+                sessionStorage.setItem('access_granted', 'true');
+                document.getElementById('pinOverlay').classList.add('hidden');
+            } else { 
+                alert("Incorrect Pin. Authorization Denied."); 
+                document.getElementById('pinInput').value = ""; 
+            }
+        };
+
+        if (sessionStorage.getItem('access_granted') === 'true') {
+            document.getElementById('pinOverlay').classList.add('hidden');
+        }
+
+        window.closeRejectionModal = () => {
+            document.getElementById('rejectionModal').classList.add('hidden');
+            document.getElementById('rejectionReasonInput').value = "";
+            activeRejectionTarget = null;
+        };
+
+        // Fungsi Pemprosesan Penukaran Status Bertaraf Skema Enterprise Multi-Level
+        window.processApproval = async (subId, newStatus, isInspection) => {
+            if (newStatus === 'Rejected') {
+                // Buka modal ulasan maklum balas khas jika ditolak
+                document.getElementById('rejectionModal').classList.remove('hidden');
+                activeRejectionTarget = { subId, isInspection };
+                return;
+            }
+            // Jika kelulusan biasa, teruskan proses komit pangkalan data secara langsung
+            await executeStatusUpdate(subId, 'Approved', "", isInspection);
+        };
+
+        // Bind butang pengesahan penolakan modal
+        document.getElementById('confirmRejectBtn').addEventListener('click', async () => {
+            const reason = document.getElementById('rejectionReasonInput').value.trim();
+            if (!reason) return alert("Please provide a rejection reason/feedback description!");
+            
+            if (activeRejectionTarget) {
+                await executeStatusUpdate(activeRejectionTarget.subId, 'Rejected', reason, activeRejectionTarget.isInspection);
+                closeRejectionModal();
+            }
+        });
+
+        async function executeStatusUpdate(subId, targetStatus, reason = "", isInspection) {
+            try {
+                const colName = isInspection ? "inspection_submissions" : "exam_submissions";
+                const updatePayload = { updatedAt: serverTimestamp() };
+
+                // Simpan objek berstruktur mengikut peranan agar selari dengan keperluan paparan 'ExamList.html'
+                if (isLeader) {
+                    updatePayload.leaderApproval = {
+                        status: targetStatus,
+                        approverName: session.name || "QC Leader",
+                        reason: reason,
+                        processedAt: new Date()
+                    };
+                    // Kemas kini pembolehubah status induk bagi membolehkan dashboard menapis antrean item kerja dengan tepat
+                    updatePayload.status = (targetStatus === 'Approved') ? "pending_exec" : "Rejected";
+                } else {
+                    updatePayload.executiveApproval = {
+                        status: targetStatus,
+                        approverName: session.name || "Executive",
+                        reason: reason,
+                        processedAt: new Date()
+                    };
+                    updatePayload.status = (targetStatus === 'Approved') ? "Approved" : "Rejected";
+                }
+
+                await updateDoc(doc(db, colName, subId), updatePayload);
+                alert(`Submission record successfully flagged as [${targetStatus}]`);
+            } catch (error) {
+                console.error("Database Update Failure:", error);
+                alert("Failed to commit approval state: " + error.message);
+            }
+        }
+
+        window.filterSubmissions = (type) => {
+            currentFilterType = type;
+            
+            // Urus gaya butang penapis yang aktif aktif secara dinamik
+            ['all', 'exam', 'inspection'].forEach(t => {
+                const btn = document.getElementById(`btn-${t}`);
+                if (t === type) {
+                    btn.className = "px-5 py-2 bg-slate-900 text-white text-xs rounded-xl font-black shadow-sm transition-all";
+                } else {
+                    btn.className = "px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all";
+                }
+            });
+
+            const grid = document.getElementById('submissionGrid');
+            grid.innerHTML = '';
+            
+            const allSubmissions = [...submissionsMap.exam, ...submissionsMap.inspection];
+            const filtered = type === 'all' ? allSubmissions : allSubmissions.filter(s => s.type === type);
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-20 text-center text-slate-400">
+                        <i data-lucide="inbox" size="56" class="mb-3 opacity-40 text-slate-300"></i>
+                        <h3 class="text-lg font-black text-slate-600">No Review Tasks Available</h3>
+                        <p class="text-xs text-slate-400 font-medium max-w-xs">You are currently fully cleared! No pending operations require your digital signature right now.</p>
+                    </div>`;
+                lucide.createIcons();
+            } else {
+                filtered.forEach(s => renderCard(s));
+            }
+        };
+
+        function renderCard(s) {
+            const grid = document.getElementById('submissionGrid');
+            
+            // Pengiraan Warna Lencana Pintar Mengikut Keadaan Status Dokumen Induk Semasa
+            let statusColor = "bg-amber-50 text-amber-700 border-amber-100";
+            if (s.status === 'Approved') statusColor = "bg-green-50 text-green-700 border-green-100";
+            if (s.status === 'Rejected') statusColor = "bg-red-50 text-red-700 border-red-100";
+
+            const dateDisplay = s.submittedAt ? s.submittedAt.toDate().toLocaleDateString() : 
+                               (s.updatedAt ? s.updatedAt.toDate().toLocaleDateString() : 'New Entry');
+
+            // Ambil ulasan dari pangkalan data jika sudah sedia diproses sebelum ini
+            const leaderState = s.leaderApproval?.status || "Pending Verification";
+            const execState = s.executiveApproval?.status || "Pending Verification";
+
+            grid.innerHTML += `
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start gap-3 mb-3">
+                            <h3 class="font-black text-base text-slate-800 leading-snug truncate max-w-[180px]" title="${s.title}">${s.title}</h3>
+                            <span class="text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wider border ${statusColor}">${s.status}</span>
+                        </div>
+                        
+                        <div class="bg-slate-50 p-3.5 rounded-xl text-xs space-y-1.5 font-medium border border-slate-100">
+                            <p class="flex justify-between text-slate-500"><span class="font-bold">Record Domain:</span> <span class="uppercase font-black text-[10px] text-slate-700">${s.type}</span></p>
+                            <p class="flex justify-between text-slate-500"><span class="font-bold">Operator ID:</span> <span class="text-slate-800 font-bold">${s.operatorId || "N/A"}</span></p>
+                            <p class="flex justify-between text-slate-500"><span class="font-bold">Date Log:</span> <span class="text-slate-600 font-semibold">${dateDisplay}</span></p>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-dashed border-slate-100 space-y-1.5">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Approval Signature Logs</p>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-400 flex items-center gap-1 font-bold"><i data-lucide="shield-alert" size="12"></i> QC Leader:</span>
+                                <span class="font-black ${leaderState === 'Approved' ? 'text-green-600' : (leaderState === 'Rejected' ? 'text-red-600' : 'text-amber-500')}">${leaderState}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-400 flex items-center gap-1 font-bold"><i data-lucide="user-check" size="12"></i> Executive:</span>
+                                <span class="font-black ${execState === 'Approved' ? 'text-green-600' : (execState === 'Rejected' ? 'text-red-600' : 'text-amber-500')}">${execState}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 mt-6">
+                        <button onclick="processApproval('${s.id}', 'Approved', ${s.type === 'inspection'})" 
+                            class="flex-1 py-2.5 bg-green-600 text-white rounded-xl text-xs font-black hover:bg-green-700 transition-all shadow-sm shadow-green-600/10 flex items-center justify-center gap-1">
+                            <i data-lucide="check" size="14"></i> Sign Off
+                        </button>
+                        <button onclick="processApproval('${s.id}', 'Rejected', ${s.type === 'inspection'})" 
+                            class="flex-1 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl text-xs font-black hover:bg-red-100 transition-all flex items-center justify-center gap-1">
+                            <i data-lucide="x" size="14"></i> Reject
+                        </button>
+                    </div>
+                </div>`;
+            lucide.createIcons();
+        }
+
+        // Fungsi Bantuan Semakan Keserasian ID Merentasi Pelbagai Kunci Firestore Document ID
+        function isAssignedToMe(savedReviewerId) {
+            if (!savedReviewerId) return false;
+            const target = String(savedReviewerId).trim().toLowerCase();
+            return userIdentifiers.includes(target);
+        }
+
+        // 3. ATUR CARA REALTIME LISTENERS FIRESTORE DENGAN SINKRONISASI CAKUPAN ID
+        onSnapshot(collection(db, "exam_submissions"), (snap) => {
+            submissionsMap.exam = [];
+            snap.forEach(d => {
+                const data = d.data();
+                // Tentukan rujukan ID sasaran yang sepatutnya menyemak item
+                const relevantReviewerId = isLeader ? data.leaderId : data.executiveId;
+                
+                if (isAssignedToMe(relevantReviewerId)) {
+                    submissionsMap.exam.push({ 
+                        id: d.id, 
+                        ...data, 
+                        type: 'exam', 
+                        title: data.examTitle || data.examName || 'Peperiksaan QC' 
+                    });
+                }
+            });
+            filterSubmissions(currentFilterType);
+        });
+
+        onSnapshot(collection(db, "inspection_submissions"), (snap) => {
+            submissionsMap.inspection = [];
+            snap.forEach(d => {
+                const data = d.data();
+                const relevantReviewerId = isLeader ? data.leaderId : (data.executiveId || data.exectutiveId);
+                
+                if (isAssignedToMe(relevantReviewerId)) {
+                    submissionsMap.inspection.push({ 
+                        id: d.id, 
+                        ...data, 
+                        type: 'inspection', 
+                        title: data.templateTitle || 'Audit Lapangan' 
+                    });
+                }
+            });
+            filterSubmissions(currentFilterType);
+        });
+
+        // 4. Muatkan Paparan Navigasi Komponen Sisi (Sidebar)
+        try {
+            await loadSidebar(isLeader ? "SidebarLeader.html" : "SidebarExecutive.html");
+        } catch (e) {
+            console.warn("Sidebar interface build bypassed:", e);
+        }
+        
+        lucide.createIcons();
+    </script>
+</body>
+</html>

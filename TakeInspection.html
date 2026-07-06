@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perform Inspection | QC Team</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased py-6 md:py-10">
+
+    <div class="max-w-7xl mx-auto px-4 md:px-8">
+        
+        <button onclick="window.location.href='InspectionList.html'" 
+                class="mb-6 flex items-center gap-2 text-sm font-black text-slate-500 hover:text-slate-800 transition group">
+            <span class="transform group-hover:-translate-x-1 transition duration-200">←</span> Back to Inspection List
+        </button>
+
+        <header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 id="title" class="text-2xl md:text-4xl font-black text-slate-800">Loading Inspection...</h1>
+                <p class="text-sm font-bold text-slate-400 mt-1">Please fill up all mandatory fields carefully.</p>
+            </div>
+            <div class="bg-white px-5 py-3 rounded-2xl border border-slate-200 text-center sm:text-right">
+                <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Elapsed Cycle Time</p>
+                <p id="liveClockDisplay" class="text-xl font-black text-purple-600 tracking-widest">00:00</p>
+            </div>
+        </header>
+
+        <div id="inspectionContainer" class="space-y-6"></div>
+
+        <div class="bg-white p-6 rounded-3xl border shadow-sm mt-8 space-y-6">
+            <div>
+                <label class="block text-sm font-black mb-3 text-slate-700">Select Executive Reviewer</label>
+                <select id="executiveSelect" class="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-white text-slate-800">
+                    <option value="">Select Executive</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-black mb-3 text-slate-700">Select Leader Reviewer</label>
+                <select id="leaderSelect" class="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-white text-slate-800">
+                    <option value="">Select Leader</option>
+                </select>
+            </div>
+        </div>
+
+        <button id="submitBtn" class="w-full py-5 mt-8 bg-green-600 text-white font-black rounded-2xl shadow-xl hover:bg-green-700 transition duration-200">
+            Submit Audit Results
+        </button>
+    </div>
+
+    <script type="module">
+        import { db } from './js/FirebaseConfig.js';
+        import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp } 
+        from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { RoleManager } from './js/Roles.js';
+
+        RoleManager.protectPage();
+
+        const session = JSON.parse(localStorage.getItem("session"));
+        const templateId = new URLSearchParams(window.location.search).get('id');
+        
+        if (!templateId) {
+            alert("Missing template ID");
+            throw new Error("Missing template ID");
+        }
+
+        const mandatoryGroups = [];
+        let totalBenchmarkedCT = 0;
+        let inspectionStartTime = Date.now(); // Ambil penanda masa mula untuk log kemahiran
+
+        // Sistem Pemasa Visual Harian
+        setInterval(() => {
+            const delta = Math.floor((Date.now() - inspectionStartTime) / 1000);
+            const m = Math.floor(delta / 60).toString().padStart(2, '0');
+            const s = (delta % 60).toString().padStart(2, '0');
+            document.getElementById('liveClockDisplay').innerText = `${m}:${s}`;
+        }, 1000);
+
+        async function initInspection() {
+            const execSelect = document.getElementById('executiveSelect');
+            const leaderSelect = document.getElementById('leaderSelect');
+
+            try {
+                const usersSnap = await getDocs(collection(db, "users"));
+
+                usersSnap.forEach(docSnap => {
+                    const user = docSnap.data();
+                    const role = (user.qcRole || "").trim().toUpperCase();
+
+                    if (role === "EXECUTIVE") {
+                        const opt = document.createElement('option');
+                        opt.value = docSnap.id;
+                        opt.textContent = `Executive: ${user.name || docSnap.id}`;
+                        execSelect.appendChild(opt);
+                    }
+
+                    if (role === "QC_LEADER") {
+                        const opt = document.createElement('option');
+                        opt.value = docSnap.id;
+                        opt.textContent = `Leader: ${user.name || docSnap.id}`;
+                        leaderSelect.appendChild(opt);
+                    }
+                });
+
+                const snap = await getDoc(doc(db, "inspection_templates", templateId));
+                if (!snap.exists()) {
+                    document.getElementById('title').innerText = "Template Not Found";
+                    return alert("Template not found!");
+                }
+
+                const data = snap.data();
+                document.getElementById('title').innerText = data.title;
+
+                // Kira jumlah had masa kitaran standard (CT) untuk rujukan kelajuan
+                const calcTotalCT = (arr) => arr.reduce((acc, row) => acc + (parseInt(row.ct) || 0), 0);
+                totalBenchmarkedCT = calcTotalCT(data.lh || []) + calcTotalCT(data.rh || []);
+
+                renderSection('LEFT HAND (LH)', data.lh || [], 'border-amber-100', 'text-amber-600');
+                renderSection('RIGHT HAND (RH)', data.rh || [], 'border-blue-100', 'text-blue-600');
+
+            } catch (error) {
+                console.error("Initialization error:", error);
+                alert("Failed to load inspection database items.");
+            }
+        }
+
+        function renderSection(title, rows, borderClass, textClass) {
+            const container = document.getElementById('inspectionContainer');
+            const section = document.createElement('div');
+            section.className = `bg-white p-4 md:p-6 rounded-3xl border shadow-sm ${borderClass}`;
+
+            let html = `
+                <h2 class="text-xl font-black mb-4 ${textClass}">${title}</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-center border-collapse">
+                        <thead class="bg-slate-50 uppercase text-[10px] text-slate-500 font-black">
+                            <tr>
+                                <th class="p-3 border">ID</th><th class="p-3 border">Inspection Item</th><th class="p-3 border">Criteria</th>
+                                <th class="p-3 border">Standard</th><th class="p-3 border">Rank</th><th class="p-3 border">Key Point</th>
+                                <th class="p-3 border">Reference</th><th class="p-3 border">Method</th><th class="p-3 border">CT</th>
+                                <th class="p-3 border">Insp. Res</th><th class="p-3 border">KeyPt Res</th><th class="p-3 border">Seq. Res</th>
+                            </tr>
+                        </thead>
+                        <tbody class="inspection-body">`;
+
+            rows.forEach((row) => {
+                html += `
+                    <tr class="border-b hover:bg-slate-50" data-row-id="${row.id}">
+                        <td class="p-3 border font-bold">${row.id}</td>
+                        <td class="p-3 border text-left min-w-[120px]">${row.item || ''}</td>
+                        <td class="p-3 border">${row.criteria || ''}</td>
+                        <td class="p-3 border"><img src="${row.standardImg || ''}" onclick="window.open('${row.standardImg || ''}')" class="w-12 h-12 object-cover mx-auto cursor-pointer rounded border" alt="Standard"></td>
+                        <td class="p-3 border">${row.rank || ''}</td>
+                        <td class="p-3 border text-left min-w-[150px]">${row.keyPoint || ''}</td>
+                        <td class="p-3 border"><img src="${row.referenceImg || ''}" onclick="window.open('${row.referenceImg || ''}')" class="w-12 h-12 object-cover mx-auto cursor-pointer rounded border" alt="Reference"></td>
+                        <td class="p-3 border">${row.method || ''}</td>
+                        <td class="p-3 border">${row.ct ?? 0}s</td>
+                        ${renderRadio(row.inspMandatory, 'insp', row.id)}
+                        ${renderRadio(row.keyPtMandatory, 'keyPt', row.id)}
+                        ${renderRadio(row.seqMandatory, 'seq', row.id)}
+                    </tr>`;
+            });
+            html += `</tbody></table></div>`;
+            section.innerHTML = html;
+            container.appendChild(section);
+        }
+
+        function renderRadio(isMandatory, type, rowId) {
+            if (!isMandatory) return `<td class="p-3 border text-slate-200 font-bold">N/A</td>`;
+            const name = `${type}_${rowId}`;
+            
+            if (!mandatoryGroups.includes(name)) {
+                mandatoryGroups.push(name);
+            }
+
+            return `
+                <td class="p-3 border">
+                    <div class="flex justify-center gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="${name}" value="pass" class="hidden peer">
+                            <span class="peer-checked:bg-green-500 peer-checked:text-white px-2 py-1 rounded text-[10px] font-black border inline-block select-none transition-all">✅</span>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="${name}" value="fail" class="hidden peer">
+                            <span class="peer-checked:bg-red-500 peer-checked:text-white px-2 py-1 rounded text-[10px] font-black border inline-block select-none transition-all">❌</span>
+                        </label>
+                    </div>
+                </td>`;
+        }
+
+        async function submitInspection() {
+            const executiveId = document.getElementById('executiveSelect').value;
+            const leaderId = document.getElementById('leaderSelect').value;
+
+            if (!executiveId || !leaderId) {
+                alert("Please select both Executive and Leader!");
+                return;
+            }
+
+            let missingAnswer = false;
+            for (const groupName of mandatoryGroups) {
+                const checkedRadio = document.querySelector(`input[name="${groupName}"]:checked`);
+                if (!checkedRadio) {
+                    missingAnswer = true;
+                    break;
+                }
+            }
+
+            if (missingAnswer) {
+                alert("Please complete all mandatory inspection items before submitting!");
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Submitting...";
+
+            // LOGIK KALKULATOR PRESTASI KEMAHIRAN (SKILLS CHART METRICS)
+            const actualTimeSpentSeconds = Math.floor((Date.now() - inspectionStartTime) / 1000);
+            let totalRadioChecked = 0;
+            let defectFailCounts = 0;
+            let sequenceSopErrors = 0;
+
+            const results = {};
+            document.querySelectorAll('input[type="radio"]:checked').forEach(input => {
+                results[input.name] = input.value;
+                totalRadioChecked++;
+                
+                // Jika operator pilih ralat/defect (fail)
+                if (input.value === 'fail') {
+                    if (input.name.startsWith('insp') || input.name.startsWith('keyPt')) {
+                        defectFailCounts++;
+                    }
+                    if (input.name.startsWith('seq')) {
+                        sequenceSopErrors++;
+                    }
+                }
+            });
+
+            const operatorSession = JSON.parse(localStorage.getItem('session'));
+            const userId = String(operatorSession?.employeeId || operatorSession?.uid || "Unknown");
+            const userName = operatorSession?.name || "Operator";
+
+            try {
+                // 1. Simpan rekod semakan penuh untuk Aliran Kerja Kelulusan sedia ada
+                await addDoc(collection(db, "inspection_submissions"), {
+                    templateId: templateId,
+                    operatorId: userId,
+                    operatorName: userName,
+                    submittedBy: { id: userId, name: userName },
+                    executiveId: executiveId,
+                    leaderId: leaderId,
+                    results: results,
+                    status: "Pending",
+                    executiveApproval: { status: "Pending" },
+                    leaderApproval: { status: "Pending" },
+                    submittedAt: serverTimestamp()
+                });
+
+                // 2. JAMBATAN INTEGRASI DATA KEMAHIRAN REAL-TIME (Dihubungkan terus ke SkillsChart.html)
+                // Kira peratusan kecekapan kitaran masa (Maksimum 100%)
+                let timeEfficiencyScore = 100;
+                if (actualTimeSpentSeconds > totalBenchmarkedCT && totalBenchmarkedCT > 0) {
+                    timeEfficiencyScore = Math.max(30, Math.round((totalBenchmarkedCT / actualTimeSpentSeconds) * 100));
+                }
+
+                // Kira peratusan pematuhan SOP turutan kerja
+                const totalSeqItems = mandatoryGroups.filter(g => g.startsWith('seq_')).length;
+                let sopAdherenceScore = 100;
+                if (totalSeqItems > 0) {
+                    sopAdherenceScore = Math.round(((totalSeqItems - sequenceSopErrors) / totalSeqItems) * 100);
+                }
+
+                // Kira anggaran ketepatan pengesanan kecacatan harian
+                let detectionAccuracyScore = totalRadioChecked > 0 ? Math.round(((totalRadioChecked - defectFailCounts) / totalRadioChecked) * 100) : 100;
+
+                await addDoc(collection(db, "inspection_logs"), {
+                    operatorId: userId,
+                    operatorName: userName,
+                    templateId: templateId,
+                    cycleTimeMastery: timeEfficiencyScore,     // Menghidupkan paksi Kelajuan CT
+                    sequenceAdherence: sopAdherenceScore,       // Menghidupkan paksi SOP Disiplin
+                    defectDetectionRate: detectionAccuracyScore, // Menghidupkan paksi Ketepatan Ralat
+                    timestamp: serverTimestamp()
+                });
+
+                alert("Audit Logs committed. Competency tracking points processed successfully!");
+                window.location.href = "InspectionList.html";
+
+            } catch (e) {
+                alert("Error submitting: " + e.message);
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit Audit Results";
+            }
+        }
+
+        document.getElementById('submitBtn').addEventListener('click', submitInspection);
+
+        await initInspection();
+    </script>
+</body>
+
+</html>

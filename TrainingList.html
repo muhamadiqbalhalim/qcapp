@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Calendar | QC Team</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+        }
+        /* Custom scrollbar untuk event kecil dalam kalendar */
+        .event-container::-webkit-scrollbar {
+            width: 3px;
+        }
+        .event-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+
+        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+            
+            <header class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-black flex items-center gap-3 tracking-tight">
+                        <i id="header-icon" data-lucide="calendar-days" class="text-blue-600"></i> Training Calendar
+                    </h1>
+                    <p class="text-slate-500 text-xs mt-0.5">Click any session to view details, or click an empty slot (Admin) to schedule training.</p>
+                </div>
+                
+                <div id="adminBadgeContainer" class="hidden">
+                    <span id="roleBadge" class="px-3 py-1.5 text-xs font-bold rounded-xl shadow-sm"></span>
+                </div>
+            </header>
+
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                
+                <div class="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50/50">
+                    <button id="prevMonthBtn" class="p-2 hover:bg-slate-200 rounded-xl transition-colors">
+                        <i data-lucide="chevron-left" size="20"></i>
+                    </button>
+                    <h2 id="currentMonthYear" class="text-lg font-black text-slate-800 tracking-tight">July 2026</h2>
+                    <button id="nextMonthBtn" class="p-2 hover:bg-slate-200 rounded-xl transition-colors">
+                        <i data-lucide="chevron-right" size="20"></i>
+                    </button>
+                </div>
+
+                <div class="calendar-grid bg-slate-100 border-b border-slate-200 text-center py-2.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <div>Sunday</div>
+                    <div>Monday</div>
+                    <div>Tuesday</div>
+                    <div>Wednesday</div>
+                    <div>Thursday</div>
+                    <div>Friday</div>
+                    <div>Saturday</div>
+                </div>
+
+                <div id="calendarDaysGrid" class="calendar-grid bg-slate-200 gap-[1px]"></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="detailsModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 transform transition-all">
+            <div class="flex justify-between items-start mb-4">
+                <h3 id="modalTrainingName" class="text-xl font-black text-slate-900 leading-tight pr-6">Training Name</h3>
+                <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-50 rounded-lg">
+                    <i data-lucide="x" size="20"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3 text-sm text-slate-700 mb-6 border-t pt-4">
+                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="calendar" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">Date:</strong> <span id="lblDate"></span></span></div>
+                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="clock" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">Time:</strong> <span id="lblTime"></span></span></div>
+                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="hourglass" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">Duration:</strong> <span id="lblDuration"></span></span></div>
+                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="map-pin" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">Location:</strong> <span id="lblLocation"></span></span></div>
+                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="user" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">PIC:</strong> <span id="lblPic"></span></span></div>
+                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="building" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">Open To:</strong> <span id="lblOpenTo"></span></span></div>
+                <div class="flex items-center gap-3 text-slate-600"><i data-lucide="users" class="text-blue-500" size="18"></i> <span><strong class="text-slate-800">Available Slots:</strong> <span id="lblSlots" class="font-bold"></span></span></div>
+            </div>
+            
+            <div class="flex gap-3 border-t pt-4">
+                <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="flex-1 py-2.5 border font-bold rounded-xl text-sm hover:bg-slate-50 transition-colors">← Back</button>
+                <div id="actionBtnContainer" class="flex-1 flex"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="createModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b">
+                <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="text-emerald-500"></i> Create New Training Session
+                </h3>
+                <button onclick="document.getElementById('createModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i data-lucide="x" size="20"></i>
+                </button>
+            </div>
+            
+            <form id="createTrainingForm" class="space-y-3 text-sm">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Training Name</label>
+                    <input type="text" id="txtNewName" required placeholder="e.g., Kiken Yochi Training" class="w-full p-2.5 border rounded-xl focus:ring-2 focus:ring-slate-400 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Target Date</label>
+                        <input type="date" id="txtNewDate" required class="w-full p-2.5 border rounded-xl outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Start Time</label>
+                        <input type="time" id="txtNewTime" required class="w-full p-2.5 border rounded-xl outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Duration (mins/hrs)</label>
+                        <input type="text" id="txtNewDuration" required placeholder="e.g., 50 min" class="w-full p-2.5 border rounded-xl outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Seat Limit (Capacity)</label>
+                        <input type="number" id="txtNewSeatLimit" required placeholder="100" value="100" class="w-full p-2.5 border rounded-xl outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Location / Venue</label>
+                    <input type="text" id="txtNewLocation" required placeholder="e.g., Kantin NSSB" class="w-full p-2.5 border rounded-xl outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Person In-Charge (PIC)</label>
+                    <input type="text" id="txtNewPic" required placeholder="e.g., Cik Haiza" class="w-full p-2.5 border rounded-xl outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Allowed Departments (Comma Separated)</label>
+                    <input type="text" id="txtNewDeps" required placeholder="ALL, SHE, IT, FNA, PPIC" class="w-full p-2.5 border rounded-xl outline-none">
+                </div>
+                
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="document.getElementById('createModal').classList.add('hidden')" class="flex-1 py-2.5 border font-bold rounded-xl text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button type="submit" id="btnSubmitTraining" class="flex-1 py-2.5 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 shadow-sm transition-colors">Save To Server</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/FirebaseConfig.js';
+        import { collection, getDocs, addDoc, serverTimestamp, getCountFromServer, query, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { ROLES, RoleManager } from './js/Roles.js';
+        import { loadSidebar } from './js/sidebar-loader.js';
+
+        // Validasi Sesi Pengguna
+        const user = JSON.parse(localStorage.getItem('session'));
+        if (!user) RoleManager.forceLogout();
+
+        // Tetapkan Hak Akses Admin/Leader/Exec
+        const isExec = user.role === ROLES.EXECUTIVE;
+        const isLeader = user.role === ROLES.QC_LEADER;
+        const isAdmin = isExec || isLeader;
+        const themeColor = isExec ? 'amber' : (isLeader ? 'purple' : 'blue');
+
+        // Parameter Keadaan Kalendar Global
+        let currentDate = new Date();
+        let trainingsCache = [];
+        let registrationsCache = new Map(); // Tukar ke Map untuk simpan attendanceStatus sekali
+
+        async function initApp() {
+            // Tukar warna mengikut Peranan Sesi
+            document.getElementById('header-icon').className = `text-${themeColor}-600`;
+            
+            if (isAdmin) {
+                const badge = document.getElementById('roleBadge');
+                badge.textContent = isExec ? "💡 Executive Mode: Training Manager" : "⚡ Leader Mode: Training Manager";
+                badge.className = `px-3 py-1.5 text-xs font-bold rounded-xl bg-${themeColor}-50 text-${themeColor}-700 border border-${themeColor}-200`;
+                document.getElementById('adminBadgeContainer').classList.remove('hidden');
+            }
+
+            // Muatkan fail sidebar mengikut status peranan
+            const targetSidebar = isExec ? 'SidebarExecutive.html' : (isLeader ? 'SidebarLeader.html' : 'SidebarOperator.html');
+            await loadSidebar(targetSidebar);
+
+            // Pasang Event Listeners Navigasi Kalendar
+            document.getElementById('prevMonthBtn').addEventListener('click', () => changeMonth(-1));
+            document.getElementById('nextMonthBtn').addEventListener('click', () => changeMonth(1));
+            
+            // Dapatkan borang admin listeners
+            document.getElementById('createTrainingForm').addEventListener('submit', handleCreateTrainingSubmit);
+
+            // Jalankan muat turun data Firebase & Render utama
+            await fetchCalendarData();
+        }
+
+        async function fetchCalendarData() {
+            try {
+                const staffId = String(user.employeeId).trim();
+                
+                // 1. Muat turun semua latihan
+                const txSnap = await getDocs(collection(db, "trainings"));
+                trainingsCache = txSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // 2. Muat turun senarai pendaftaran saya
+                const regSnap = await getDocs(query(collection(db, "training_registrations"), where("staffId", "==", staffId)));
+                registrationsCache = new Map();
+                regSnap.forEach(doc => {
+                    const data = doc.data();
+                    registrationsCache.set(data.trainingId, data.attendanceStatus);
+                });
+
+                // Bina paparan kalendar fizikal
+                renderCalendar();
+            } catch (err) {
+                console.error("Gagal memuat turun data kalendar:", err);
+            }
+        }
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('currentMonthYear').textContent = `${monthNames[month]} ${year}`;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const totalDays = new Date(year, month + 1, 0).getDate();
+            const prevTotalDays = new Date(year, month, 0).getDate();
+
+            const grid = document.getElementById('calendarDaysGrid');
+            grid.innerHTML = ""; 
+
+            // 1. Kotak kosong bulan lepas (Padding)
+            for (let i = firstDayIndex; i > 0; i--) {
+                const dayNum = prevTotalDays - i + 1;
+                const cell = document.createElement('div');
+                cell.className = "bg-slate-50 min-h-[110px] p-2 text-slate-300 text-xs font-semibold select-none";
+                cell.textContent = dayNum;
+                grid.appendChild(cell);
+            }
+
+            // 2. Kotak hari aktif bulan semasa
+            for (let day = 1; day <= totalDays; day++) {
+                const cell = document.createElement('div');
+                const currentCellDateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                cell.className = "bg-white min-h-[110px] p-2 flex flex-col justify-between border-slate-100 hover:bg-slate-50/80 transition-colors cursor-pointer group";
+                
+                const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+                
+                cell.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-md ${isToday ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700'}" data-date="${currentCellDateString}">
+                            ${day}
+                        </span>
+                    </div>
+                    <div class="flex-1 overflow-y-auto space-y-1 event-container text-[10px] max-h-[70px] pr-0.5"></div>
+                `;
+
+                const matchedTrainings = trainingsCache.filter(t => {
+                    if (!t.dateString) return false;
+                    const d = new Date(t.dateString);
+                    return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+                });
+
+                const eventBox = cell.querySelector('.event-container');
+                
+                matchedTrainings.forEach(t => {
+                    const hasJoined = registrationsCache.has(t.id);
+                    const attendStatus = registrationsCache.get(t.id);
+                    const item = document.createElement('div');
+                    
+                    // Bezakan warna tag jika sudah disahkan hadir (ATTENDED = green) atau sekadar mendaftar (PENDING)
+                    let badgeBg = `bg-${themeColor}-50 text-${themeColor}-700 border-${themeColor}-100`;
+                    if (hasJoined) {
+                        badgeBg = attendStatus === "ATTENDED" 
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                            : 'bg-amber-50 text-amber-700 border-amber-200';
+                    }
+                    
+                    item.className = `p-1 rounded border truncate font-bold ${badgeBg} shadow-2xs hover:scale-[1.02] transition-transform`;
+                    item.innerHTML = `<span>${t.name}</span>`;
+                    
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openDetailsModal(t);
+                    });
+                    eventBox.appendChild(item);
+                });
+
+                cell.addEventListener('click', () => {
+                    if (isAdmin) {
+                        openCreateModal(currentCellDateString);
+                    }
+                });
+
+                grid.appendChild(cell);
+            }
+
+            // 3. Kotak kosong bulan depan (Padding)
+            const totalCellsSoFar = firstDayIndex + totalDays;
+            const remainingCells = (7 - (totalCellsSoFar % 7)) % 7;
+            for (let day = 1; day <= remainingCells; day++) {
+                const cell = document.createElement('div');
+                cell.className = "bg-slate-50 min-h-[110px] p-2 text-slate-300 text-xs font-semibold select-none";
+                cell.textContent = day;
+                grid.appendChild(cell);
+            }
+
+            lucide.createIcons();
+        }
+
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        // =============== TINDAKAN MODAL 1: VIEW DETAILS ===============
+        async function openDetailsModal(t) {
+            document.getElementById('modalTrainingName').textContent = t.name;
+            document.getElementById('lblDate').textContent = t.dateString || "-";
+            document.getElementById('lblTime').textContent = t.timeString || "TBA";
+            document.getElementById('lblDuration').textContent = t.trainingHours || t.duration || "50 min";
+            document.getElementById('lblLocation').textContent = t.where || t.location || "-";
+            document.getElementById('lblPic').textContent = t.pic || "-";
+            
+            const allowedDeps = t.allowedDepartments || ["ALL"];
+            document.getElementById('lblOpenTo').textContent = allowedDeps.join(", ");
+
+            // Kira sisa slot semasa
+            const regCountSnap = await getCountFromServer(query(collection(db, "training_registrations"), where("trainingId", "==", t.id)));
+            const taken = regCountSnap.data().count;
+            const max = parseInt(t.seatLimit) || 100;
+            const remaining = Math.max(0, max - taken);
+            
+            const lblSlots = document.getElementById('lblSlots');
+            lblSlots.textContent = `${remaining} / ${max}`;
+            lblSlots.className = remaining <= 5 ? "font-bold text-red-500" : "font-bold text-emerald-600";
+
+            // Sambungan Pengesahan Pautan Butang Kehadiran
+            const hasJoined = registrationsCache.has(t.id);
+            const attendStatus = registrationsCache.get(t.id);
+            const userDeptAllowed = allowedDeps.includes("ALL") || allowedDeps.includes(user.department);
+            const actionContainer = document.getElementById('actionBtnContainer');
+            actionContainer.innerHTML = "";
+
+            if (hasJoined) {
+                if (attendStatus === "ATTENDED") {
+                    // Jika sudah hadir & bukti disahkan
+                    actionContainer.innerHTML = `<button disabled class="w-full py-2.5 bg-emerald-100 text-emerald-600 font-bold rounded-xl text-sm cursor-not-allowed text-center flex items-center justify-center gap-1">✓ Attended & Verified</button>`;
+                } else {
+                    // Jika baru 'Join Sesi' (PENDING) -> Paparkan jambatan link butang ke TrainingAttendance.html!
+                    actionContainer.innerHTML = `
+                        <button onclick="window.location.href='TrainingAttendance.html?id=${t.id}'" 
+                                class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl text-sm shadow-sm transition-colors flex items-center justify-center gap-1.5">
+                            <i data-lucide="camera" size="16"></i> Submit Attendance
+                        </button>
+                    `;
+                }
+            } else if (!userDeptAllowed) {
+                actionContainer.innerHTML = `<button disabled class="w-full py-2.5 bg-slate-100 text-slate-400 font-bold rounded-xl text-sm cursor-not-allowed flex items-center justify-center gap-1"><i data-lucide="lock" size="14"></i> Restricted</button>`;
+            } else if (remaining <= 0) {
+                actionContainer.innerHTML = `<button disabled class="w-full py-2.5 bg-red-100 text-red-500 font-bold rounded-xl text-sm cursor-not-allowed text-center">Full Capacity</button>`;
+            } else {
+                // Sesi pendaftaran baharu
+                const btnJoin = document.createElement('button');
+                btnJoin.className = "w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm transition-colors";
+                btnJoin.textContent = "Join Sesi";
+                btnJoin.onclick = () => executionJoinTraining(t, btnJoin);
+                actionContainer.appendChild(btnJoin);
+            }
+
+            document.getElementById('detailsModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        async function executionJoinTraining(t, btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin inline-block" size="14"></i>`;
+            lucide.createIcons();
+
+            try {
+                await addDoc(collection(db, "training_registrations"), {
+                    trainingId: t.id,
+                    trainingName: t.name,
+                    trainingDate: t.dateString,
+                    trainingHours: t.trainingHours || 1,
+                    staffId: String(user.employeeId),
+                    fullName: user.name,
+                    department: user.department,
+                    attendanceStatus: "PENDING",
+                    status: "REGISTERED",
+                    timestamp: serverTimestamp()
+                });
+
+                alert(`Pendaftaran Berjaya! Sesi latihan anda: ${t.name}`);
+                document.getElementById('detailsModal').classList.add('hidden');
+                await fetchCalendarData();
+            } catch (err) {
+                console.error(err);
+                alert("Server error, pendaftaran gagal.");
+                btn.disabled = false;
+                btn.textContent = "Join Sesi";
+            }
+        }
+
+        // =============== TINDAKAN MODAL 2: CREATE TRAINING ===============
+        function openCreateModal(targetDateString) {
+            document.getElementById('createTrainingForm').reset();
+            document.getElementById('txtNewDate').value = targetDateString;
+            document.getElementById('createModal').classList.remove('hidden');
+        }
+
+        async function handleCreateTrainingSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitTraining');
+            btn.disabled = true;
+            btn.textContent = "Saving...";
+
+            const rawDeps = document.getElementById('txtNewDeps').value;
+            const depsArray = rawDeps.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
+
+            const newTrainingPayload = {
+                name: document.getElementById('txtNewName').value.trim(),
+                dateString: document.getElementById('txtNewDate').value,
+                timeString: document.getElementById('txtNewTime').value,
+                trainingHours: document.getElementById('txtNewDuration').value.trim(),
+                seatLimit: Number(document.getElementById('txtNewSeatLimit').value) || 100,
+                where: document.getElementById('txtNewLocation').value.trim(),
+                pic: document.getElementById('txtNewPic').value.trim(),
+                allowedDepartments: depsArray,
+                isPrivate: false,
+                createdAt: serverTimestamp()
+            };
+
+            try {
+                await addDoc(collection(db, "trainings"), newTrainingPayload);
+                alert("Sukses! Latihan baharu berjaya diterbitkan.");
+                document.getElementById('createModal').classList.add('hidden');
+                await fetchCalendarData();
+            } catch (err) {
+                console.error("Gagal mencipta latihan:", err);
+                alert("Gagal menyimpan latihan baharu.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Save To Server";
+            }
+        }
+
+        initApp();
+    </script>
+</body>
+
+</html>

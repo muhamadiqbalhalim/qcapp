@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operator Skills Analytics | QC Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+
+    <div id="main-content" style="display: none;">
+        <div class="flex flex-col md:flex-row min-h-screen">
+            <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+
+            <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+                <header class="mb-8 border-b border-slate-100 pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.15em] text-purple-600 font-black mb-1">Performance Matrix Profile</p>
+                        <h1 class="text-3xl font-black tracking-tight text-slate-800">Operator Competency Analytics</h1>
+                        <p class="text-slate-400 font-medium text-xs mt-1">Real-time evaluation chart mapping live inspection analytics and exam certifications.</p>
+                    </div>
+                    <div class="bg-white px-4 py-2 rounded-2xl border border-slate-200 flex items-center gap-3">
+                        <div class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span id="operatorIdentityBadge" class="text-xs font-black text-slate-600">ID: N/A</span>
+                    </div>
+                </header>
+
+                <div class="max-w-7xl mx-auto">
+                    <div class="w-full bg-white p-6 rounded-3xl border border-slate-200 flex flex-col">
+                        <div class="flex justify-between items-center mb-6">
+                            <div class="flex items-center gap-2 text-purple-600">
+                                <i data-lucide="award" class="h-5 w-5"></i>
+                                <span class="text-sm font-black uppercase text-slate-700 tracking-wider">Skill Proficiency Matrix</span>
+                            </div>
+                            <span id="rankBadge" class="text-xs font-black px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
+                                Bronze Apprentice
+                            </span>
+                        </div>
+                        
+                        <div class="relative w-full max-w-[340px] mx-auto aspect-square my-4 h-[300px]">
+                            <canvas id="skillsRadarChart"></canvas>
+                        </div>
+
+                        <div class="w-full border-t border-slate-100 my-6"></div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
+                            <div class="p-3.5 bg-purple-50/60 rounded-xl border border-purple-100">
+                                <p class="text-xs font-black text-purple-700 flex items-center gap-1.5 mb-1">
+                                    🎯 Defect Detection Accuracy
+                                </p>
+                                <p class="text-[11px] text-slate-500 leading-relaxed">
+                                    Nisbah ketepatan mengesan kecacatan produk sebenar semasa sesi semakan live.
+                                </p>
+                            </div>
+                            
+                            <div class="p-3.5 bg-amber-50/60 rounded-xl border border-amber-100">
+                                <p class="text-xs font-black text-amber-700 flex items-center gap-1.5 mb-1">
+                                    ⚡ Cycle Time Mastery
+                                </p>
+                                <p class="text-[11px] text-slate-500 leading-relaxed">
+                                    Kecekapan kelajuan menyelesaikan pemeriksaan berbanding standard sasaran masa (Takt Time).
+                                </p>
+                            </div>
+
+                            <div class="p-3.5 bg-blue-50/60 rounded-xl border border-blue-100">
+                                <p class="text-xs font-black text-blue-700 flex items-center gap-1.5 mb-1">
+                                    📋 Sequence Adherence
+                                </p>
+                                <p class="text-[11px] text-slate-500 leading-relaxed">
+                                    Kepatuhan kronologi langkah kerja digital mengikut susunan standard SOP rasmi.
+                                </p>
+                            </div>
+
+                            <div class="p-3.5 bg-emerald-50/60 rounded-xl border border-emerald-100">
+                                <p class="text-xs font-black text-emerald-700 flex items-center gap-1.5 mb-1">
+                                    🧠 Theoretical Assessment
+                                </p>
+                                <p class="text-[11px] text-slate-500 leading-relaxed">
+                                    Purata kumulatif gred markah bagi siri ujian pensijilan kuiz e-learning (QC Exam).
+                                </p>
+                            </div>
+                        </div>
+                    </div> 
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="loading" class="flex justify-center items-center h-screen bg-[#F8FAFC]">
+        <div class="text-center">
+            <i data-lucide="loader-2" class="animate-spin text-purple-600 mx-auto" size="40"></i>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-3">Compiling Personal Skill Data Matrix...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/FirebaseConfig.js';
+        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { loadSidebar } from './js/sidebar-loader.js';
+        import { ROLES, RoleManager } from './js/Roles.js';
+
+        let radarChartInstance = null;
+
+        async function initPage() {
+            // Paksa buka kandungan dahulu supaya tidak tersangkut pada skrin loading jika berlaku ralat sesi
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+
+            try {
+                RoleManager.enforceStrictSession();
+                const session = JSON.parse(localStorage.getItem('session')) || {};
+                
+                const targetSidebar = session.role === ROLES.EXECUTIVE ? 'SidebarExecutive.html' : 'SidebarLeader.html';
+                await loadSidebar(targetSidebar);
+
+                if (document.getElementById('operatorIdentityBadge')) {
+                    document.getElementById('operatorIdentityBadge').innerText = `ID: ${session.employeeId || 'N/A'}`;
+                }
+
+                await compileCalculatedSkills(session.employeeId);
+                lucide.createIcons();
+            } catch (err) {
+                console.error("Pipeline Warning (Using default visual placeholders):", err);
+                // Guna nilai contoh (Fallback) jika dibuka secara offline/tanpa server login
+                buildRadarChart([65, 75, 80, 60]);
+                lucide.createIcons();
+            }
+        }
+
+        async function compileCalculatedSkills(employeeId) {
+            let defectAccuracy = 65; 
+            let cycleTimeEfficiency = 75;
+            let sequenceAdherence = 80;
+            let examScore = 60;
+
+            if (employeeId) {
+                try {
+                    const targetOperatorId = String(employeeId);
+                    const examQuery = query(collection(db, "exam_results"), where("operatorId", "==", targetOperatorId));
+                    const examSnap = await getDocs(examQuery);
+                    let totalExamScore = 0, examCount = 0;
+                    examSnap.forEach(doc => { totalExamScore += doc.data().score || 0; examCount++; });
+                    if (examCount > 0) examScore = Math.round(totalExamScore / examCount);
+
+                    const inspQuery = query(collection(db, "inspection_logs"), where("operatorId", "==", targetOperatorId));
+                    const inspSnap = await getDocs(inspQuery);
+                    let totalCT = 0, totalSeq = 0, totalDetection = 0, logCount = 0;
+                    inspSnap.forEach(doc => {
+                        const logData = doc.data();
+                        totalCT += logData.cycleTimeMastery || 0;
+                        totalSeq += logData.sequenceAdherence || 0;
+                        totalDetection += logData.defectDetectionRate || 0;
+                        logCount++;
+                    });
+                    if (logCount > 0) {
+                        cycleTimeEfficiency = Math.round(totalCT / logCount);
+                        sequenceAdherence = Math.round(totalSeq / logCount);
+                        defectAccuracy = Math.round(totalDetection / logCount);
+                    }
+                } catch (e) { console.warn("Firestore error:", e); }
+            }
+
+            const compositeScore = (defectAccuracy + cycleTimeEfficiency + sequenceAdherence + examScore) / 4;
+            const rankBadge = document.getElementById('rankBadge');
+            if (rankBadge) {
+                if (compositeScore >= 85) {
+                    rankBadge.innerText = "Gold Certified Elite";
+                    rankBadge.className = "text-xs font-black px-3 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-200";
+                } else if (compositeScore >= 70) {
+                    rankBadge.innerText = "Silver Verified Operator";
+                    rankBadge.className = "text-xs font-black px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200";
+                } else {
+                    rankBadge.innerText = "Bronze Apprentice";
+                    rankBadge.className = "text-xs font-black px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200";
+                }
+            }
+
+            buildRadarChart([defectAccuracy, cycleTimeEfficiency, sequenceAdherence, examScore]);
+        }
+
+        function buildRadarChart(dataPoints) {
+            const ctx = document.getElementById('skillsRadarChart').getContext('2d');
+            if (radarChartInstance) radarChartInstance.destroy();
+
+            radarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Defect Detection Accuracy', 'Cycle Time Mastery', 'Sequence Adherence', 'Theoretical Assessment'],
+                    datasets: [{
+                        label: 'Current Level Matrix (%)',
+                        data: dataPoints,
+                        backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                        borderColor: 'rgb(99, 102, 241)',
+                        pointBackgroundColor: 'rgb(99, 102, 241)',
+                        pointBorderColor: '#fff',
+                        borderWidth: 2.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(226, 232, 240, 0.8)' },
+                            grid: { color: 'rgba(226, 232, 240, 0.8)' },
+                            pointLabels: { font: { size: 10, weight: '900', family: 'sans-serif' }, color: '#475569' },
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                            ticks: { display: false }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        initPage();
+    </script>
+</body>
+</html>

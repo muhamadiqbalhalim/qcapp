@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Dashboard | QC Team</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar Container -->
+        <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+            <header class="mb-8">
+                <p class="text-xs uppercase tracking-[0.15em] text-amber-500 font-black mb-2">Executive Dashboard</p>
+                <h1 class="text-3xl md:text-5xl font-black">Welcome, <span id="userName" class="text-amber-500">Norhafizah</span></h1>
+            </header>
+
+            <!-- Profile Cards -->
+            <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                    <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Employee ID</p>
+                    <p id="statId" class="text-xl font-black mt-1 text-slate-700">-</p>
+                </div>
+                <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                    <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Department</p>
+                    <p id="statDept" class="text-xl font-black mt-1 text-slate-700">-</p>
+                </div>
+                <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                    <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Role</p>
+                    <p class="text-xl font-black mt-1 text-slate-700">Executive</p>
+                </div>
+            </section>
+
+            <!-- Skill Proficiency (Radar Chart Retained) -->
+            <section class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-8">
+                <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-amber-600">
+                    <i data-lucide="award" size="20"></i> Skill Proficiency
+                </h3>
+                <div class="max-w-md mx-auto">
+                    <canvas id="skillsChart"></canvas>
+                </div>
+            </section>
+
+            <!-- My Joined Trainings Section -->
+            <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 mb-8">
+                <h3 class="font-black text-lg mb-6 flex items-center gap-2 text-slate-800">
+                    <i data-lucide="alert-triangle" class="text-amber-500"></i> My Joined Trainings
+                </h3>
+                <div id="pendingTrainingsList" class="space-y-3">
+                    <p class="text-sm opacity-50 italic">Loading joined trainings...</p>
+                </div>
+            </section>
+
+            <!-- Submission Queue -->
+            <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <h3 class="font-black text-lg mb-6 flex items-center gap-2 text-slate-800">
+                    <i data-lucide="list-checks" class="text-amber-500"></i> New Submissions
+                </h3>
+                <div id="approvalList" class="space-y-3">
+                    <p class="text-sm opacity-50 italic">Loading queue...</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+<script type="module">
+    import { db } from './js/FirebaseConfig.js';
+    import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { loadSidebar } from './js/sidebar-loader.js';
+    import { RoleManager, ROLES } from './js/Roles.js';
+
+    function initChart() {
+        const ctx = document.getElementById('skillsChart').getContext('2d');
+
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Quality', 'Safety', 'Problem Solving', 'Speed', 'Technical'],
+                datasets: [{
+                    label: 'Proficiency',
+                    data: [90, 85, 75, 80, 95],
+                    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                    borderColor: 'rgba(245, 158, 11, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+
+    async function initDashboard() {
+
+        try {
+
+            // ==================================================
+            // SECURITY
+            // ==================================================
+            RoleManager.enforceStrictSession();
+            RoleManager.protectPage(ROLES.EXECUTIVE);
+
+            await loadSidebar('SidebarExecutive.html');
+
+            initChart();
+
+            const session = JSON.parse(localStorage.getItem('session'));
+
+            if (!session) {
+                RoleManager.forceLogout();
+                return;
+            }
+
+            const userId = session.employeeId || session.id;
+
+            document.getElementById('userName').innerText =
+                session.name || "Executive";
+
+            document.getElementById('statId').innerText =
+                userId || "-";
+
+            document.getElementById('statDept').innerText =
+                session.department || "QC";
+
+            // ==================================================
+            // MY JOINED TRAININGS
+            // ==================================================
+            const trainingQuery = query(
+                collection(db, "trainings"),
+                where("joinedUsers", "array-contains", userId)
+            );
+
+            const trainingSnap = await getDocs(trainingQuery);
+
+            const pendingList =
+                document.getElementById('pendingTrainingsList');
+
+            if (!trainingSnap.empty) {
+
+                pendingList.innerHTML = "";
+
+                trainingSnap.forEach(doc => {
+
+                    const training = doc.data();
+
+                    pendingList.innerHTML += `
+                        <div class="flex justify-between items-center p-4 bg-amber-50/50 border border-amber-100 rounded-xl">
+                            <span class="font-bold text-amber-900">
+                                ${training.title || "Untitled Training"}
+                            </span>
+
+                            <a href="TrainingDetails.html?id=${doc.id}"
+                               class="text-xs px-4 py-2 bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600">
+                                Details
+                            </a>
+                        </div>
+                    `;
+                });
+
+            } else {
+
+                pendingList.innerHTML =
+                    '<p class="text-sm opacity-50">No joined trainings found.</p>';
+            }
+
+            // ==================================================
+            // APPROVAL QUEUE
+            // ==================================================
+            const approvalQuery = query(
+                collection(db, "exam_submissions"),
+                where("status", "==", "pending_exec")
+            );
+
+            const approvalSnap = await getDocs(approvalQuery);
+
+            const approvalList =
+                document.getElementById('approvalList');
+
+            if (!approvalSnap.empty) {
+
+                approvalList.innerHTML = "";
+
+                approvalSnap.forEach(doc => {
+
+                    const submission = doc.data();
+
+                    approvalList.innerHTML += `
+                        <div class="flex justify-between items-center p-4 bg-slate-50 border rounded-xl">
+                            <span class="font-bold">
+                                ${submission.operatorName || "Operator"}
+                            </span>
+
+                            <a href="ReviewSubmission.html?id=${doc.id}"
+                               class="text-xs px-4 py-2 bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600">
+                                Review
+                            </a>
+                        </div>
+                    `;
+                });
+
+            } else {
+
+                approvalList.innerHTML =
+                    '<p class="text-sm opacity-50">No new submissions.</p>';
+            }
+
+            lucide.createIcons();
+
+        } catch (err) {
+
+            console.error("Executive Dashboard Error:", err);
+
+            RoleManager.forceLogout();
+        }
+    }
+
+    initDashboard();
+</script>
+</body>
+</html>

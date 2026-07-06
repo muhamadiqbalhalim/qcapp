@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QC Team | User Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-slate-100 antialiased text-slate-800">
+
+<div class="min-h-screen flex flex-col md:flex-row">
+
+    <aside id="sidebar" class="w-full md:w-64 md:fixed md:inset-y-0 md:left-0 md:z-20 bg-white border-b md:border-b-0 md:border-r border-slate-200 overflow-y-auto shrink-0">
+        </aside>
+
+    <div class="flex-1 md:pl-64 flex flex-col min-w-0">
+        
+        <main class="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto">
+
+            <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                        User Management & Performance Hub
+                    </h1>
+                    <p class="text-slate-500 mt-1 text-sm sm:text-base">
+                        Manage QC user permissions, view aggregated historical exam scores, and monitor dynamic operator proficiency rankings.
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Users</p>
+                    <h2 id="totalUsers" class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">0</h2>
+                </div>
+
+                <div class="bg-amber-50 rounded-2xl border border-amber-200 p-4 sm:p-6 shadow-sm">
+                    <p class="text-amber-700 text-xs font-bold uppercase tracking-wider">Pending</p>
+                    <h2 id="pendingUsers" class="text-2xl sm:text-3xl font-black text-amber-600 mt-1">0</h2>
+                </div>
+
+                <div class="bg-green-50 rounded-2xl border border-green-200 p-4 sm:p-6 shadow-sm">
+                    <p class="text-green-700 text-xs font-bold uppercase tracking-wider">Active</p>
+                    <h2 id="activeUsers" class="text-2xl sm:text-3xl font-black text-green-600 mt-1">0</h2>
+                </div>
+
+                <div class="bg-red-50 rounded-2xl border border-red-200 p-4 sm:p-6 shadow-sm">
+                    <p class="text-red-700 text-xs font-bold uppercase tracking-wider">Disabled</p>
+                    <h2 id="disabledUsers" class="text-2xl sm:text-3xl font-black text-red-600 mt-1">0</h2>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input id="searchInput" type="text" placeholder="Search by ID, Name, Department, or Badge Tier (Gold/Silver/Bronze)..." 
+                        class="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50/50">
+                    
+                    <select id="statusFilter" 
+                        class="border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                        <option value="ALL">All Status</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="DISABLED">Disabled</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto w-full">
+                    <table class="min-w-full divide-y divide-slate-100 whitespace-nowrap">
+                        <thead class="bg-slate-50 border-b">
+                            <tr class="text-slate-500 text-xs font-bold uppercase tracking-wider">
+                                <th class="text-center p-4 w-16">No.</th>
+                                <th class="text-left p-4">Employee ID</th>
+                                <th class="text-left p-4">Name / Dept</th>
+                                <th class="text-left p-4">QC Role</th>
+                                <th class="text-left p-4">Avg Exam Score</th>
+                                <th class="text-left p-4">Composite Skill Score</th>
+                                <th class="text-left p-4">Proficiency Tier Badge</th>
+                                <th class="text-left p-4">Status</th>
+                                <th class="text-center p-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTable" class="divide-y divide-slate-100 text-sm">
+                            <tr>
+                                <td colspan="9" class="text-center py-12 text-slate-400 font-medium">
+                                    Extracting user directories and aggregating dynamic performance metrics...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="userModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+                <div class="bg-white rounded-2xl w-full max-w-md p-6 sm:p-8 shadow-xl">
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 mb-6">Manage User Access</h2>
+                    <input type="hidden" id="selectedUserId">
+
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block font-bold text-xs uppercase tracking-wider text-slate-500 mb-2">QC Role</label>
+                            <select id="roleSelect" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white">
+                                <option value="QG_OPERATOR">QG Operator</option>
+                                <option value="QC_LEADER">QC Leader</option>
+                                <option value="EXECUTIVE">Executive</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold text-xs uppercase tracking-wider text-slate-500 mb-2">Status</label>
+                            <select id="statusSelect" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white">
+                                <option value="ACTIVE">ACTIVE</option>
+                                <option value="PENDING">PENDING</option>
+                                <option value="DISABLED">DISABLED</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 mt-8">
+                        <button id="closeModal" class="px-5 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
+                            Cancel
+                        </button>
+                        <button id="saveUser" class="px-5 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-all shadow-sm">
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script type="module">
+import { db } from "./js/FirebaseConfig.js";
+import { RoleManager, ROLES } from "./js/Roles.js";
+import {
+    collection,
+    getDocs,
+    updateDoc,
+    doc,
+    query,
+    where,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+// Security enforcement
+RoleManager.enforceStrictSession();
+RoleManager.protectPage(ROLES.EXECUTIVE);
+
+// Load Sidebar
+fetch("SidebarExecutive.html")
+    .then(res => res.text())
+    .then(html => {
+        document.getElementById("sidebar").innerHTML = html;
+        lucide.createIcons();
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                RoleManager.forceLogout();
+            });
+        }
+    });
+
+// DOM Elements
+const table = document.getElementById("userTable");
+const totalUsers = document.getElementById("totalUsers");
+const activeUsers = document.getElementById("activeUsers");
+const pendingUsers = document.getElementById("pendingUsers");
+const disabledUsers = document.getElementById("disabledUsers");
+const searchInput = document.getElementById("searchInput");
+const statusFilter = document.getElementById("statusFilter");
+
+let users = [];
+
+// Load users + Compile aggregated enterprise analytics safely across multiple future data logs
+async function loadUsers(){
+    table.innerHTML = `
+        <tr>
+            <td colspan="9" class="text-center py-10 text-slate-400 font-medium">Fetching real-time profile metrics from cloud storage...</td>
+        </tr>
+    `;
+
+    try {
+        // Fetch users mapping
+        const snapshot = await getDocs(collection(db, "users"));
+        const rawUsers = [];
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data.department && data.department.toUpperCase().includes("QC")) {
+                rawUsers.push({ id: docSnap.id, ...data });
+            }
+        });
+
+        // Pull full analytics histories asynchronously (Scales dynamically regardless of how many exams/inspections exist)
+        const [examSnap, inspSnap] = await Promise.all([
+            getDocs(collection(db, "exam_results")),
+            getDocs(collection(db, "inspection_logs"))
+        ]);
+
+        // Map multiple exam papers and future modules to dynamic historical lists
+        const examMap = {};
+        examSnap.forEach(d => {
+            const res = d.data();
+            const opId = String(res.operatorId || '');
+            if (!examMap[opId]) examMap[opId] = [];
+            examMap[opId].push(res.score || 0);
+        });
+
+        // Map multiple inspection logs data entries across time
+        const logMap = {};
+        inspSnap.forEach(d => {
+            const log = d.data();
+            const opId = String(log.operatorId || '');
+            if (!logMap[opId]) logMap[opId] = [];
+            logMap[opId].push(log);
+        });
+
+        // Process loop matrix for each user profiles 
+        users = rawUsers.map(user => {
+            const opId = String(user.employeeId || '');
+            
+            // 1. Calculate historical dynamic average of ALL current and future exams combined
+            const scores = examMap[opId] || [];
+            const avgExam = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+
+            // 2. Aggregate parameters from all past inspection sheets
+            const logs = logMap[opId] || [];
+            let defectAcc = 50, cycleTime = 50, sequenceAdd = 50; // Standard compliance industrial benchmark baseline values
+            
+            if (logs.length > 0) {
+                defectAcc = Math.round(logs.reduce((sum, l) => sum + (l.defectDetectionRate || 0), 0) / logs.length);
+                cycleTime = Math.round(logs.reduce((sum, l) => sum + (l.cycleTimeMastery || 0), 0) / logs.length);
+                sequenceAdd = Math.round(logs.reduce((sum, l) => sum + (l.sequenceAdherence || 0), 0) / logs.length);
+            }
+
+            const currentQuizComponent = avgExam !== null ? avgExam : 50;
+            const skillsAvg = Math.round((defectAcc + cycleTime + sequenceAdd + currentQuizComponent) / 4);
+
+            // 3. Match Composite score index to enterprise qualification tiers
+            let badgeName = "Bronze Apprentice";
+            let badgeStyle = "bg-orange-50 text-orange-700 border-orange-200";
+            
+            if (skillsAvg >= 85) {
+                badgeName = "Gold Elite";
+                badgeStyle = "bg-amber-50 text-amber-700 border-amber-200 font-bold";
+            } else if (skillsAvg >= 70) {
+                badgeName = "Silver Operator";
+                badgeStyle = "bg-slate-100 text-slate-700 border-slate-200 font-bold";
+            }
+
+            return {
+                ...user,
+                avgExam: avgExam !== null ? `${avgExam}%` : "No Records",
+                skillsAvg: `${skillsAvg}%`,
+                badgeName,
+                badgeStyle
+            };
+        });
+
+        renderTable(users);
+    } catch(err) {
+        console.error("Critical User Manager Query Failure:", err);
+        table.innerHTML = `<tr><td colspan="9" class="text-center py-12 text-red-500 font-medium">Failed to process data. Verify configurations.</td></tr>`;
+    }
+}
+
+loadUsers();
+
+// Render UI Table Row Modules
+function renderTable(data){
+    table.innerHTML = "";
+
+    if(data.length === 0){
+        table.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-12 text-slate-400 font-medium">No system users found matching filters.</td>
+            </tr>
+        `;
+        updateSummary([]);
+        return;
+    }
+
+    updateSummary(data);
+
+    data.forEach((user, index) => {
+        table.innerHTML += `
+            <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="p-4 text-center font-bold text-slate-400">${index + 1}</td>
+                <td class="p-4 font-mono font-medium text-slate-700">${user.employeeId ?? "-"}</td>
+                <td class="p-4">
+                    <div class="font-semibold text-slate-900">${user.name ?? "-"}</div>
+                    <div class="text-xs text-slate-400 tracking-wide uppercase">${user.department ?? "-"}</div>
+                </td>
+                <td class="p-4 text-slate-600 font-medium">${user.qcRole ?? "-"}</td>
+                
+                <td class="p-4">
+                    <span class="font-bold text-slate-700">${user.avgExam}</span>
+                </td>
+                <td class="p-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-16 bg-slate-200 rounded-full h-2 overflow-hidden hidden sm:block">
+                            <div class="bg-blue-600 h-2" style="width: ${user.skillsAvg}"></div>
+                        </div>
+                        <span class="font-bold text-blue-600">${user.skillsAvg}</span>
+                    </div>
+                </td>
+                <td class="p-4">
+                    <span class="px-2.5 py-1 rounded-full text-xs font-black border ${user.badgeStyle}">
+                        🏅 ${user.badgeName}
+                    </span>
+                </td>
+
+                <td class="p-4">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold tracking-wide
+                        ${user.qcStatus === "ACTIVE" ? "bg-green-100 text-green-700" : 
+                          user.qcStatus === "DISABLED" ? "bg-red-100 text-red-700" : 
+                          "bg-amber-100 text-amber-700"}">
+                        ${user.qcStatus ?? "PENDING"}
+                    </span>
+                </td>
+                <td class="p-4 text-center">
+                    <button class="editBtn bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 text-xs font-bold rounded-xl transition-all shadow-sm" data-id="${user.id}">
+                        Manage
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+// Global Summary Counter Counterparts
+function updateSummary(data){
+    totalUsers.innerText = data.length;
+    activeUsers.innerText = data.filter(x => x.qcStatus === "ACTIVE").length;
+    pendingUsers.innerText = data.filter(x => !x.qcStatus || x.qcStatus === "PENDING").length;
+    disabledUsers.innerText = data.filter(x => x.qcStatus === "DISABLED").length;
+}
+
+// Execution triggers
+searchInput.addEventListener("input", filterUsers);
+statusFilter.addEventListener("change", filterUsers);
+
+function filterUsers(){
+    const keyword = searchInput.value.toLowerCase().trim();
+    const status = statusFilter.value;
+
+    const filtered = users.filter(user => {
+        const matchKeyword = 
+            (user.employeeId ?? "").toLowerCase().includes(keyword) ||
+            (user.name ?? "").toLowerCase().includes(keyword) ||
+            (user.badgeName ?? "").toLowerCase().includes(keyword) ||
+            (user.department ?? "").toLowerCase().includes(keyword);
+
+        const matchStatus = 
+            status === "ALL" || 
+            (user.qcStatus ?? "PENDING") === status;
+
+        return matchKeyword && matchStatus;
+    });
+
+    renderTable(filtered);
+}
+
+// Modal Toggle Mechanics
+const modal = document.getElementById("userModal");
+const selectedUserId = document.getElementById("selectedUserId");
+const roleSelect = document.getElementById("roleSelect");
+const statusSelect = document.getElementById("statusSelect");
+const saveUser = document.getElementById("saveUser");
+const closeModal = document.getElementById("closeModal");
+
+table.addEventListener("click", e => {
+    if (!e.target.classList.contains("editBtn")) return;
+
+    const id = e.target.dataset.id;
+    const user = users.find(x => x.id === id);
+
+    selectedUserId.value = id;
+    roleSelect.value = user.qcRole ?? "QG_OPERATOR";
+    statusSelect.value = user.qcStatus ?? "PENDING";
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+});
+
+closeModal.onclick = () => {
+    modal.classList.remove("flex");
+    modal.classList.add("hidden");
+};
+
+saveUser.onclick = async () => {
+    saveUser.disabled = true;
+    saveUser.innerText = "Saving Profiles...";
+
+    try {
+        await updateDoc(doc(db, "users", selectedUserId.value), {
+            qcRole: roleSelect.value,
+            qcStatus: statusSelect.value,
+            updatedAt: serverTimestamp()
+        });
+
+        modal.classList.remove("flex");
+        modal.classList.add("hidden");
+        await loadUsers();
+        showToast("User compliance profile configurations updated.");
+    } catch(err) {
+        console.error(err);
+        showToast("Database mutation request rejected.", true);
+    } finally {
+        saveUser.disabled = false;
+        saveUser.innerText = "Save Changes";
+    }
+};
+
+// Toast module notification framework
+function showToast(message, danger = false){
+    const toast = document.createElement("div");
+    toast.className = `fixed top-6 right-6 px-6 py-4 rounded-2xl shadow-xl text-white z-50 text-sm font-semibold tracking-wide transition-all
+        ${danger ? "bg-red-500 shadow-red-500/20" : "bg-green-500 shadow-green-500/20"}`;
+    toast.innerText = message;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.remove(); }, 2500);
+}
+</script>
+</body>
+</html>

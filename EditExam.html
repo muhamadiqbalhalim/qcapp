@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Exam | QC Leader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#F8FAFC] py-8 px-4 md:py-12">
+
+    <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+        <header class="mb-8 flex items-center justify-between border-b border-slate-100 pb-5">
+            <div>
+                <p class="text-xs uppercase tracking-[0.15em] text-purple-600 font-black mb-1">Assessment Editor</p>
+                <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Modify Exam Structure</h1>
+            </div>
+            <button onclick="window.location.href='ExamManager.html'" class="text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-100 px-4 py-2 rounded-xl transition-colors">
+                Back to List
+            </button>
+        </header>
+        
+        <div class="mb-6">
+            <label class="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Exam Title Configuration</label>
+            <input type="text" id="editTitle" class="w-full p-4 border border-slate-200 rounded-2xl font-bold text-slate-800 bg-slate-50/50 outline-none focus:ring-2 focus:ring-purple-100 focus:bg-white transition-all" placeholder="Enter custom evaluation exam title...">
+        </div>
+
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">Exam Questions & Schema</label>
+                <button type="button" onclick="addNewQuestion()" class="text-xs bg-purple-50 text-purple-700 hover:bg-purple-100 font-black px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1">
+                    <i data-lucide="plus" size="14"></i> Add Question
+                </button>
+            </div>
+            <div id="questionsContainer" class="space-y-6">
+                </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-100">
+            <button id="saveBtn" onclick="saveChanges()" class="w-full py-4 bg-purple-600 text-white font-black rounded-2xl hover:bg-purple-700 shadow-xs transition-all flex items-center justify-center gap-2">
+                <i data-lucide="save" size="18"></i> Save Configuration Changes
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/FirebaseConfig.js';
+        import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { ROLES, RoleManager } from './js/Roles.js';
+
+        // Secure access verification
+        RoleManager.enforceStrictSession();
+        RoleManager.protectPage(ROLES.QC_LEADER, ROLES.EXECUTIVE);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        // Boleh menerima query param 'id' atau 'editId' agar serasi dengan ExamManager
+        const examId = urlParams.get('id') || urlParams.get('editId');
+        let questionsList = [];
+
+        async function loadData() {
+            if (!examId) {
+                alert("Invalid or missing Exam Identification parameter ID!");
+                window.location.href = "ExamManager.html";
+                return;
+            }
+
+            try {
+                const snap = await getDoc(doc(db, "qc_exams", examId));
+                if (!snap.exists()) {
+                    alert("Exam configuration signature not found inside the collections workspace.");
+                    window.location.href = "ExamManager.html";
+                    return;
+                }
+                
+                const data = snap.data();
+                document.getElementById('editTitle').value = data.title || "";
+                questionsList = data.questions || [];
+                
+                renderQuestions();
+            } catch (err) {
+                console.error("Firebase Schema Extraction Error:", err);
+                alert("Error connecting to server cloud ecosystem.");
+            }
+        }
+        
+        function renderQuestions() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = "";
+
+            if(questionsList.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">No Questions Configured</p>
+                    </div>`;
+                return;
+            }
+
+            questionsList.forEach((q, qIndex) => {
+                const optionsHTML = [0, 1, 2, 3].map(oIdx => {
+                    const alphabet = String.fromCharCode(65 + oIdx); // A, B, C, D
+                    const optVal = q.options && q.options[oIdx] ? q.options[oIdx] : "";
+                    return `
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-slate-400 w-4">${alphabet}</span>
+                            <input type="text" 
+                                   value="${optVal}" 
+                                   oninput="updateOptionData(${qIndex}, ${oIdx}, this.value)"
+                                   class="flex-1 p-2.5 text-xs font-medium border border-slate-200 bg-slate-50/30 rounded-xl outline-none focus:bg-white focus:ring-1 focus:ring-purple-200" 
+                                   placeholder="Option text content...">
+                        </div>`;
+                }).join('');
+
+                container.innerHTML += `
+                    <div class="p-5 bg-slate-50/50 border border-slate-200 rounded-2xl space-y-4 relative">
+                        <div class="flex justify-between items-center gap-4">
+                            <span class="text-xs font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg">Question #${qIndex + 1}</span>
+                            <button type="button" onclick="removeQuestion(${qIndex})" class="text-slate-400 hover:text-red-500 transition-colors p-1">
+                                <i data-lucide="trash-2" size="16"></i>
+                            </button>
+                        </div>
+
+                        <div>
+                            <input type="text" 
+                                   value="${q.questionText || ""}" 
+                                   oninput="updateQuestionTextData(${qIndex}, this.value)"
+                                   class="w-full p-3 text-xs font-bold border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-1 focus:ring-purple-200" 
+                                   placeholder="Enter the quiz question prompt...">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            ${optionsHTML}
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Correct Target Key Answer</span>
+                            <select onchange="updateCorrectAnswerData(${qIndex}, parseInt(this.value))" class="text-xs font-bold text-slate-700 bg-white border border-slate-200 p-2 rounded-xl outline-none focus:ring-1 focus:ring-purple-200">
+                                <option value="0" ${q.correctAnswer === 0 ? 'selected' : ''}>Option A</option>
+                                <option value="1" ${q.correctAnswer === 1 ? 'selected' : ''}>Option B</option>
+                                <option value="2" ${q.correctAnswer === 2 ? 'selected' : ''}>Option C</option>
+                                <option value="3" ${q.correctAnswer === 3 ? 'selected' : ''}>Option D</option>
+                            </select>
+                        </div>
+                    </div>`;
+            });
+
+            lucide.createIcons();
+        }
+
+        // Window interaction scope attachment mapping handlers
+        window.addNewQuestion = () => {
+            questionsList.push({
+                questionText: "",
+                options: ["", "", "", ""],
+                correctAnswer: 0
+            });
+            renderQuestions();
+        };
+
+        window.removeQuestion = (index) => {
+            questionsList.splice(index, 1);
+            renderQuestions();
+        };
+
+        window.updateQuestionTextData = (qIndex, value) => {
+            questionsList[qIndex].questionText = value;
+        };
+
+        window.updateOptionData = (qIndex, oIndex, value) => {
+            if(!questionsList[qIndex].options) questionsList[qIndex].options = ["", "", "", ""];
+            questionsList[qIndex].options[oIndex] = value;
+        };
+
+        window.updateCorrectAnswerData = (qIndex, value) => {
+            questionsList[qIndex].correctAnswer = value;
+        };
+        
+        window.saveChanges = async () => {
+            const btn = document.getElementById('saveBtn');
+            const titleInput = document.getElementById('editTitle').value.trim();
+
+            if (!titleInput) {
+                alert("Exam Title field cannot be left blank empty!");
+                return;
+            }
+
+            // Validasi soalan kosong
+            for(let i=0; i < questionsList.length; i++) {
+                if(!questionsList[i].questionText.trim()) {
+                    alert(`Question #${i+1} prompt text cannot be empty!`);
+                    return;
+                }
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin" size="16"></i> Saving Workspace...`;
+            lucide.createIcons();
+
+            try {
+                await updateDoc(doc(db, "qc_exams", examId), { 
+                    title: titleInput,
+                    questions: questionsList
+                });
+                alert("Exam specification layout updated successfully!");
+                window.location.href = "ExamManager.html";
+            } catch (err) {
+                console.error("Update Transaction Core Error:", err);
+                alert("Failed to commit database modifications: " + err.message);
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="save" size="18"></i> Save Configuration Changes`;
+                lucide.createIcons();
+            }
+        };
+
+        // Trigger sequence entry point
+        loadData();
+    </script>
+</body>
+</html>
