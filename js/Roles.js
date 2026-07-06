@@ -218,7 +218,7 @@ export const RoleManager = {
         );
 
         window.location.replace(
-            "Login.html"
+            "index.html"
         );
 
     }
