@@ -8,64 +8,87 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+<body class="bg-[#F8FAFC] text-slate-900 font-sans min-h-screen">
 
-    <div class="flex flex-col md:flex-row min-h-screen">
-        <!-- Sidebar Container -->
-        <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+    <!-- Responsive Layout Shell -->
+    <div class="flex flex-col md:flex-row min-h-screen relative w-full">
+        
+        <!-- Sidebar Mounting Target (Managed dynamically by your script via loadSidebar) -->
+        <div id="sidebar-container" class="w-full md:w-auto md:sticky md:top-0 md:h-screen z-50 shrink-0"></div>
 
-        <!-- Main Content -->
-        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
-            <header class="mb-8">
-                <p class="text-xs uppercase tracking-[0.15em] text-amber-500 font-black mb-2">Executive Dashboard</p>
-                <h1 class="text-3xl md:text-5xl font-black">Welcome, <span id="userName" class="text-amber-500">Norhafizah</span></h1>
+        <!-- Main Workspace Area -->
+        <main class="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
+            
+            <!-- Dashboard Branding Header -->
+            <header class="mb-8 mt-2 md:mt-0">
+                <p class="text-xs uppercase tracking-[0.15em] text-amber-500 font-black mb-1.5">Executive Workspace</p>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-slate-900">
+                    Welcome, <span id="userName" class="text-amber-500">Norhafizah</span>
+                </h1>
             </header>
 
-            <!-- Profile Cards -->
+            <!-- Metadata Profile Metrics -->
             <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                    <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Employee ID</p>
-                    <p id="statId" class="text-xl font-black mt-1 text-slate-700">-</p>
+                <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Employee ID</p>
+                    <p id="statId" class="text-xl font-black mt-1 text-slate-800">-</p>
                 </div>
-                <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                    <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Department</p>
-                    <p id="statDept" class="text-xl font-black mt-1 text-slate-700">-</p>
+                <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Department</p>
+                    <p id="statDept" class="text-xl font-black mt-1 text-slate-800">-</p>
                 </div>
-                <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                    <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Role</p>
-                    <p class="text-xl font-black mt-1 text-slate-700">Executive</p>
-                </div>
-            </section>
-
-            <!-- Skill Proficiency (Radar Chart Retained) -->
-            <section class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-8">
-                <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-amber-600">
-                    <i data-lucide="award" size="20"></i> Skill Proficiency
-                </h3>
-                <div class="max-w-md mx-auto">
-                    <canvas id="skillsChart"></canvas>
+                <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Access Role</p>
+                    <p class="text-xl font-black mt-1 text-amber-600">Executive</p>
                 </div>
             </section>
 
-            <!-- My Joined Trainings Section -->
-            <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 mb-8">
-                <h3 class="font-black text-lg mb-6 flex items-center gap-2 text-slate-800">
-                    <i data-lucide="alert-triangle" class="text-amber-500"></i> My Joined Trainings
-                </h3>
-                <div id="pendingTrainingsList" class="space-y-3">
-                    <p class="text-sm opacity-50 italic">Loading joined trainings...</p>
+            <!-- Dashboard Analytics & Content Matrix -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                
+                <!-- Chart Left Dynamic Deck (Takes up 1 column on desktop frames) -->
+                <div class="lg:col-span-1 space-y-8">
+                    <section class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                        <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800">
+                            <i data-lucide="award" class="text-amber-500 w-5 h-5"></i> Skill Proficiency
+                        </h3>
+                        <div class="w-full max-w-[280px] sm:max-w-xs mx-auto aspect-square flex items-center justify-center">
+                            <canvas id="skillsChart"></canvas>
+                        </div>
+                    </section>
                 </div>
-            </section>
 
-            <!-- Submission Queue -->
-            <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <h3 class="font-black text-lg mb-6 flex items-center gap-2 text-slate-800">
-                    <i data-lucide="list-checks" class="text-amber-500"></i> New Submissions
-                </h3>
-                <div id="approvalList" class="space-y-3">
-                    <p class="text-sm opacity-50 italic">Loading queue...</p>
+                <!-- Operations Queues (Takes up 2 columns on desktop frames) -->
+                <div class="lg:col-span-2 space-y-8">
+                    
+                    <!-- My Joined Trainings Section -->
+                    <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800">
+                            <i data-lucide="graduation-cap" class="text-amber-500 w-5 h-5"></i> My Joined Trainings
+                        </h3>
+                        <div id="pendingTrainingsList" class="space-y-3">
+                            <div class="flex items-center gap-3 p-4 text-sm text-slate-500 italic bg-slate-50 rounded-xl">
+                                <div class="w-4 h-4 rounded-full border-2 border-amber-500 border-t-transparent animate-spin"></div>
+                                Loading joined trainings...
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Submission Queue -->
+                    <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800">
+                            <i data-lucide="inbox" class="text-amber-500 w-5 h-5"></i> New Submissions
+                        </h3>
+                        <div id="approvalList" class="space-y-3">
+                            <div class="flex items-center gap-3 p-4 text-sm text-slate-500 italic bg-slate-50 rounded-xl">
+                                <div class="w-4 h-4 rounded-full border-2 border-amber-500 border-t-transparent animate-spin"></div>
+                                Loading operational queue...
+                            </div>
+                        </div>
+                    </section>
+                    
                 </div>
-            </section>
+            </div>
         </main>
     </div>
 
@@ -85,14 +108,29 @@
                 datasets: [{
                     label: 'Proficiency',
                     data: [90, 85, 75, 80, 95],
-                    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
                     borderColor: 'rgba(245, 158, 11, 1)',
-                    borderWidth: 2
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(245, 158, 11, 1)',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(245, 158, 11, 1)'
                 }]
             },
             options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
                 scales: {
                     r: {
+                        angleLines: { color: 'rgba(226, 232, 240, 0.8)' },
+                        grid: { color: 'rgba(226, 232, 240, 0.8)' },
+                        pointLabels: {
+                            font: { size: 11, weight: 'bold', family: 'sans-serif' },
+                            color: '#475569'
+                        },
+                        ticks: { display: false },
                         beginAtZero: true,
                         max: 100
                     }
@@ -102,21 +140,17 @@
     }
 
     async function initDashboard() {
-
         try {
-
-            // ==================================================
-            // SECURITY
-            // ==================================================
+            // Security verification
             RoleManager.enforceStrictSession();
             RoleManager.protectPage(ROLES.EXECUTIVE);
 
+            // Side Navigation Engine Initializer
             await loadSidebar('SidebarExecutive.html');
 
             initChart();
 
             const session = JSON.parse(localStorage.getItem('session'));
-
             if (!session) {
                 RoleManager.forceLogout();
                 return;
@@ -124,103 +158,90 @@
 
             const userId = session.employeeId || session.id;
 
-            document.getElementById('userName').innerText =
-                session.name || "Executive";
+            document.getElementById('userName').innerText = session.name || "Executive";
+            document.getElementById('statId').innerText = userId || "-";
+            document.getElementById('statDept').innerText = session.department || "QC";
 
-            document.getElementById('statId').innerText =
-                userId || "-";
-
-            document.getElementById('statDept').innerText =
-                session.department || "QC";
-
-            // ==================================================
-            // MY JOINED TRAININGS
-            // ==================================================
+            // Load Training modules
             const trainingQuery = query(
                 collection(db, "trainings"),
                 where("joinedUsers", "array-contains", userId)
             );
 
             const trainingSnap = await getDocs(trainingQuery);
-
-            const pendingList =
-                document.getElementById('pendingTrainingsList');
+            const pendingList = document.getElementById('pendingTrainingsList');
 
             if (!trainingSnap.empty) {
-
                 pendingList.innerHTML = "";
-
                 trainingSnap.forEach(doc => {
-
                     const training = doc.data();
-
                     pendingList.innerHTML += `
-                        <div class="flex justify-between items-center p-4 bg-amber-50/50 border border-amber-100 rounded-xl">
-                            <span class="font-bold text-amber-900">
-                                ${training.title || "Untitled Training"}
-                            </span>
-
+                        <div class="flex sm:items-center justify-between gap-4 p-4 bg-amber-50/40 border border-amber-100 rounded-xl transition-all hover:bg-amber-50/80">
+                            <div class="flex items-start gap-3">
+                                <div class="p-2 bg-amber-100 text-amber-700 rounded-lg shrink-0 mt-0.5 sm:mt-0">
+                                    <i data-lucide="book-open" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-amber-950 text-sm sm:text-base">${training.title || "Untitled Training"}</h4>
+                                    <p class="text-xs text-amber-700/70 font-medium">In Progress</p>
+                                </div>
+                            </div>
                             <a href="TrainingDetails.html?id=${doc.id}"
-                               class="text-xs px-4 py-2 bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600">
-                                Details
+                               class="text-xs px-4 py-2.5 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-colors shrink-0 self-center shadow-sm">
+                                Open Module
                             </a>
                         </div>
                     `;
                 });
-
             } else {
-
-                pendingList.innerHTML =
-                    '<p class="text-sm opacity-50">No joined trainings found.</p>';
+                pendingList.innerHTML = `
+                    <div class="text-center py-6 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
+                        <p class="text-sm text-slate-400 font-medium italic">No active joined trainings assigned.</p>
+                    </div>`;
             }
 
-            // ==================================================
-            // APPROVAL QUEUE
-            // ==================================================
+            // Load Verification Submissions
             const approvalQuery = query(
                 collection(db, "exam_submissions"),
                 where("status", "==", "pending_exec")
             );
 
             const approvalSnap = await getDocs(approvalQuery);
-
-            const approvalList =
-                document.getElementById('approvalList');
+            const approvalList = document.getElementById('approvalList');
 
             if (!approvalSnap.empty) {
-
                 approvalList.innerHTML = "";
-
                 approvalSnap.forEach(doc => {
-
                     const submission = doc.data();
-
                     approvalList.innerHTML += `
-                        <div class="flex justify-between items-center p-4 bg-slate-50 border rounded-xl">
-                            <span class="font-bold">
-                                ${submission.operatorName || "Operator"}
-                            </span>
-
+                        <div class="flex sm:items-center justify-between gap-4 p-4 bg-slate-50 border border-slate-200/60 rounded-xl transition-all hover:bg-slate-100/60">
+                            <div class="flex items-start gap-3">
+                                <div class="p-2 bg-slate-200 text-slate-700 rounded-lg shrink-0 mt-0.5 sm:mt-0">
+                                    <i data-lucide="file-signature" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-sm sm:text-base">${submission.operatorName || "Operator"}</h4>
+                                    <p class="text-xs text-slate-500 font-medium">Awaiting Performance Audit</p>
+                                </div>
+                            </div>
                             <a href="ReviewSubmission.html?id=${doc.id}"
-                               class="text-xs px-4 py-2 bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600">
-                                Review
+                               class="text-xs px-4 py-2.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-colors shrink-0 self-center shadow-sm">
+                                Review File
                             </a>
                         </div>
                     `;
                 });
-
             } else {
-
-                approvalList.innerHTML =
-                    '<p class="text-sm opacity-50">No new submissions.</p>';
+                approvalList.innerHTML = `
+                    <div class="text-center py-6 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
+                        <p class="text-sm text-slate-400 font-medium italic">All incoming operator submissions clear.</p>
+                    </div>`;
             }
 
             lucide.createIcons();
 
         } catch (err) {
-
-            console.error("Executive Dashboard Error:", err);
-
+            console.error("Executive Dashboard Initialization Error:", err);
             RoleManager.forceLogout();
         }
     }
