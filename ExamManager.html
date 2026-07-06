@@ -48,12 +48,41 @@
 
         const user = JSON.parse(localStorage.getItem("session"));
 
+        // Binds click event triggers for controlling mobile nav toggle actions inside the sidebar markup template
+        function setupMobileMenuEvents() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const closeMenuBtn = document.getElementById('closeMenuBtn');
+            const sidebarMenu = document.getElementById('sidebarMenu');
+            const mobileOverlay = document.getElementById('mobileOverlay');
+
+            // If the element handles exist in the template, attach slide out and overlay display toggles
+            if (mobileMenuBtn && sidebarMenu && mobileOverlay) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    sidebarMenu.classList.remove('-translate-x-full');
+                    mobileOverlay.classList.remove('hidden');
+                });
+            }
+
+            const closeActions = [closeMenuBtn, mobileOverlay];
+            closeActions.forEach(element => {
+                if (element && sidebarMenu && mobileOverlay) {
+                    element.addEventListener('click', () => {
+                        sidebarMenu.classList.add('-translate-x-full');
+                        mobileOverlay.classList.add('hidden');
+                    });
+                }
+            });
+        }
+
         // Application main layout initialization pipeline loop
         async function initPage() {
             try {
                 // Dynamically load sidebar asset sheets based on active operational profiles
                 const targetSidebar = user.role === ROLES.EXECUTIVE ? 'SidebarExecutive.html' : 'SidebarLeader.html';
                 await loadSidebar(targetSidebar);
+
+                // Initialize menu click event configurations immediately after the sidebar finishes injection
+                setupMobileMenuEvents();
 
                 // Fetch exam configurations from backend database service collections
                 await loadExams();
