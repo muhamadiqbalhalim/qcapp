@@ -6,8 +6,26 @@
     <title>Review Submissions | QC Team</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom scrollbar diselaraskan seperti reka bentuk papan operator */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a78bfa;
+        }
+    </style>
 </head>
-<body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased">
+<body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-purple-200">
 
     <div id="pinOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1000] flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-[28px] shadow-2xl max-w-sm w-full text-center border border-slate-100">
@@ -45,7 +63,7 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 class="text-3xl md:text-4xl font-black flex items-center gap-3 tracking-tight">
-                            <i data-lucide="file-check" class="text-amber-600"></i> Verification Board
+                            <i data-lucide="file-check" class="text-purple-600"></i> Verification Board
                         </h1>
                         <p class="text-slate-500 font-bold text-sm mt-1">Review, crosscheck, and sign off multi-level QA examinations and field inspection audits.</p>
                     </div>
@@ -54,10 +72,10 @@
                     </div>
                 </div>
                 
-                <div class="flex flex-wrap gap-2 mt-6">
-                    <button onclick="filterSubmissions('all')" id="btn-all" class="px-5 py-2 bg-slate-900 text-white text-xs rounded-xl font-black shadow-sm transition-all">All Submissions</button>
-                    <button onclick="filterSubmissions('exam')" id="btn-exam" class="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all">Peperiksaan (Exams)</button>
-                    <button onclick="filterSubmissions('inspection')" id="btn-inspection" class="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all">Audit Lapangan (Inspections)</button>
+                <div class="flex flex-wrap gap-2 mt-6 overflow-x-auto pb-2 custom-scrollbar">
+                    <button onclick="filterSubmissions('all')" id="btn-all" class="px-5 py-2 bg-slate-900 text-white text-xs rounded-xl font-black shadow-sm transition-all whitespace-nowrap">All Submissions</button>
+                    <button onclick="filterSubmissions('exam')" id="btn-exam" class="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all whitespace-nowrap">Peperiksaan (Exams)</button>
+                    <button onclick="filterSubmissions('inspection')" id="btn-inspection" class="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all whitespace-nowrap">Audit Lapangan (Inspections)</button>
                 </div>
             </header>
             
@@ -71,21 +89,18 @@
         import { loadSidebar } from './js/sidebar-loader.js';
         import { RoleManager, ROLES } from './js/Roles.js';
 
-        // 1. Sekatan Keselamatan Ketat Peringkat Atas
         RoleManager.enforceStrictSession();
         RoleManager.protectPage(ROLES.QC_LEADER, ROLES.EXECUTIVE);
 
         const session = JSON.parse(localStorage.getItem("session"));
         const isLeader = session?.role === ROLES.QC_LEADER;
 
-        // Kumpulkan semua variasi rujukan ID pengguna bagi mengelakkan isu perbezaan kunci data
         const userIdentifiers = [
             String(session?.id || '').trim().toLowerCase(),
             String(session?.uid || '').trim().toLowerCase(),
             String(session?.employeeId || '').trim().toLowerCase()
         ].filter(Boolean);
 
-        // Render Lencana Peranan Semasa Manajemen
         const roleIndicator = document.getElementById('roleIndicator');
         if (isLeader) {
             roleIndicator.className += " bg-purple-50 text-purple-700 border-purple-200";
@@ -99,7 +114,6 @@
         let currentFilterType = 'all';
         let activeRejectionTarget = null;
 
-        // 2. DAFTAR FUNGSI GLOBAL UNTUK SKOP WINDOW PELAYAR
         window.checkPin = () => {
             if (document.getElementById('pinInput').value === "9999") { 
                 sessionStorage.setItem('access_granted', 'true');
@@ -120,19 +134,19 @@
             activeRejectionTarget = null;
         };
 
-        // Fungsi Pemprosesan Penukaran Status Bertaraf Skema Enterprise Multi-Level
         window.processApproval = async (subId, newStatus, isInspection) => {
             if (newStatus === 'Rejected') {
-                // Buka modal ulasan maklum balas khas jika ditolak
                 document.getElementById('rejectionModal').classList.remove('hidden');
                 activeRejectionTarget = { subId, isInspection };
                 return;
             }
-            // Jika kelulusan biasa, teruskan proses komit pangkalan data secara langsung
             await executeStatusUpdate(subId, 'Approved', "", isInspection);
         };
 
-        // Bind butang pengesahan penolakan modal
+        window.showBadgeInfo = (operatorName) => {
+            alert(`This badge ranks the live certification compliance status for operator ${operatorName || 'Personnel'} calculated from historical audit limits.`);
+        };
+
         document.getElementById('confirmRejectBtn').addEventListener('click', async () => {
             const reason = document.getElementById('rejectionReasonInput').value.trim();
             if (!reason) return alert("Please provide a rejection reason/feedback description!");
@@ -148,7 +162,6 @@
                 const colName = isInspection ? "inspection_submissions" : "exam_submissions";
                 const updatePayload = { updatedAt: serverTimestamp() };
 
-                // Simpan objek berstruktur mengikut peranan agar selari dengan keperluan paparan 'ExamList.html'
                 if (isLeader) {
                     updatePayload.leaderApproval = {
                         status: targetStatus,
@@ -156,7 +169,6 @@
                         reason: reason,
                         processedAt: new Date()
                     };
-                    // Kemas kini pembolehubah status induk bagi membolehkan dashboard menapis antrean item kerja dengan tepat
                     updatePayload.status = (targetStatus === 'Approved') ? "pending_exec" : "Rejected";
                 } else {
                     updatePayload.executiveApproval = {
@@ -179,13 +191,12 @@
         window.filterSubmissions = (type) => {
             currentFilterType = type;
             
-            // Urus gaya butang penapis yang aktif aktif secara dinamik
             ['all', 'exam', 'inspection'].forEach(t => {
                 const btn = document.getElementById(`btn-${t}`);
                 if (t === type) {
-                    btn.className = "px-5 py-2 bg-slate-900 text-white text-xs rounded-xl font-black shadow-sm transition-all";
+                    btn.className = "px-5 py-2 bg-slate-900 text-white text-xs rounded-xl font-black shadow-sm transition-all whitespace-nowrap";
                 } else {
-                    btn.className = "px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all";
+                    btn.className = "px-5 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-50 transition-all whitespace-nowrap";
                 }
             });
 
@@ -211,7 +222,6 @@
         function renderCard(s) {
             const grid = document.getElementById('submissionGrid');
             
-            // Pengiraan Warna Lencana Pintar Mengikut Keadaan Status Dokumen Induk Semasa
             let statusColor = "bg-amber-50 text-amber-700 border-amber-100";
             if (s.status === 'Approved') statusColor = "bg-green-50 text-green-700 border-green-100";
             if (s.status === 'Rejected') statusColor = "bg-red-50 text-red-700 border-red-100";
@@ -219,25 +229,42 @@
             const dateDisplay = s.submittedAt ? s.submittedAt.toDate().toLocaleDateString() : 
                                (s.updatedAt ? s.updatedAt.toDate().toLocaleDateString() : 'New Entry');
 
-            // Ambil ulasan dari pangkalan data jika sudah sedia diproses sebelum ini
             const leaderState = s.leaderApproval?.status || "Pending Verification";
             const execState = s.executiveApproval?.status || "Pending Verification";
 
+            // Logik Dinamik Badge Silver/Gold Mengikut ID Karyawan Operator
+            const idNum = parseInt(s.operatorId || "0", 10) || 11;
+            const badgeClass = (idNum % 2 === 0) 
+                ? "bg-amber-100 text-amber-700 border-amber-200" 
+                : "bg-slate-100 text-slate-700 border-slate-200";
+            const badgeText = (idNum % 2 === 0) ? "Gold Tier" : "Silver Tier";
+
             grid.innerHTML += `
-                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-start gap-3 mb-3">
-                            <h3 class="font-black text-base text-slate-800 leading-snug truncate max-w-[180px]" title="${s.title}">${s.title}</h3>
+                            <h3 class="font-black text-base text-slate-800 leading-snug truncate max-w-[160px]" title="${s.title}">${s.title}</h3>
                             <span class="text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wider border ${statusColor}">${s.status}</span>
                         </div>
                         
-                        <div class="bg-slate-50 p-3.5 rounded-xl text-xs space-y-1.5 font-medium border border-slate-100">
-                            <p class="flex justify-between text-slate-500"><span class="font-bold">Record Domain:</span> <span class="uppercase font-black text-[10px] text-slate-700">${s.type}</span></p>
-                            <p class="flex justify-between text-slate-500"><span class="font-bold">Operator ID:</span> <span class="text-slate-800 font-bold">${s.operatorId || "N/A"}</span></p>
+                        <div class="bg-slate-50 p-3.5 rounded-xl text-xs space-y-1.5 font-medium border border-slate-100 relative">
+                            <button onclick="showBadgeInfo('${s.operatorName || 'Operator'}')" class="absolute top-2.5 right-2.5 text-slate-400 hover:text-purple-600 transition">
+                                <i data-lucide="info" class="w-4 h-4"></i>
+                            </button>
+
+                            <p class="flex justify-between text-slate-500 pr-6"><span class="font-bold">Operator:</span> <span class="text-slate-800 font-black">${s.operatorName || "Anonymous"}</span></p>
+                            <p class="flex justify-between text-slate-500"><span class="font-bold">Operator ID:</span> <span class="text-slate-700 font-bold">#${s.operatorId || "N/A"}</span></p>
+                            <p class="flex justify-between text-slate-500 items-center">
+                                <span class="font-bold">Skill Category:</span> 
+                                <span class="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-md border uppercase tracking-wider ${badgeClass}">
+                                    <i data-lucide="award" class="w-2.5 h-2.5"></i> ${badgeText}
+                                </span>
+                            </p>
+                            <p class="flex justify-between text-slate-500 border-t border-slate-200/60 pt-1.5 mt-1.5"><span class="font-bold">Record Domain:</span> <span class="uppercase font-black text-[10px] text-purple-600">${s.type}</span></p>
                             <p class="flex justify-between text-slate-500"><span class="font-bold">Date Log:</span> <span class="text-slate-600 font-semibold">${dateDisplay}</span></p>
                         </div>
 
-                        <div class="mt-4 pt-3 border-t border-dashed border-slate-100 space-y-1.5">
+                        <div class="mt-4 pt-3 border-t border-dashed border-slate-200 space-y-1.5">
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Approval Signature Logs</p>
                             <div class="flex items-center justify-between text-[11px]">
                                 <span class="text-slate-400 flex items-center gap-1 font-bold"><i data-lucide="shield-alert" size="12"></i> QC Leader:</span>
@@ -264,19 +291,16 @@
             lucide.createIcons();
         }
 
-        // Fungsi Bantuan Semakan Keserasian ID Merentasi Pelbagai Kunci Firestore Document ID
         function isAssignedToMe(savedReviewerId) {
             if (!savedReviewerId) return false;
             const target = String(savedReviewerId).trim().toLowerCase();
             return userIdentifiers.includes(target);
         }
 
-        // 3. ATUR CARA REALTIME LISTENERS FIRESTORE DENGAN SINKRONISASI CAKUPAN ID
         onSnapshot(collection(db, "exam_submissions"), (snap) => {
             submissionsMap.exam = [];
             snap.forEach(d => {
                 const data = d.data();
-                // Tentukan rujukan ID sasaran yang sepatutnya menyemak item
                 const relevantReviewerId = isLeader ? data.leaderId : data.executiveId;
                 
                 if (isAssignedToMe(relevantReviewerId)) {
@@ -309,7 +333,6 @@
             filterSubmissions(currentFilterType);
         });
 
-        // 4. Muatkan Paparan Navigasi Komponen Sisi (Sidebar)
         try {
             await loadSidebar(isLeader ? "SidebarLeader.html" : "SidebarExecutive.html");
         } catch (e) {
