@@ -223,6 +223,20 @@
             const targetSidebar = isExec ? 'SidebarExecutive.html' : (isLeader ? 'SidebarLeader.html' : 'SidebarOperator.html');
             await loadSidebar(targetSidebar);
 
+            // FIX: Global Event delegation to catch clicks on dynamically loaded menu/hamburger buttons
+            document.addEventListener('click', (e) => {
+                // Find if the clicked element is the hamburger button or inside it
+                const toggleBtn = e.target.closest('button') || e.target.closest('.cursor-pointer');
+                if (toggleBtn && (toggleBtn.id === 'mobileMenuBtn' || toggleBtn.querySelector('[data-lucide="menu"]') || e.target.closest('svg'))) {
+                    // Find the injected mobile navigation menu panel element and toggle its hidden/translate property
+                    const sideMenuPanel = document.querySelector('#sidebar-container nav, #sidebar-container div[class*="fixed"]');
+                    if (sideMenuPanel) {
+                        sideMenuPanel.classList.toggle('hidden');
+                        sideMenuPanel.classList.toggle('-translate-x-full');
+                    }
+                }
+            });
+
             // Pasang Event Listeners Navigasi Kalendar
             document.getElementById('prevMonthBtn').addEventListener('click', () => changeMonth(-1));
             document.getElementById('nextMonthBtn').addEventListener('click', () => changeMonth(1));
