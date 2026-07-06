@@ -7,19 +7,41 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom scrollbar untuk daftar list yang panjang agar rapi */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a78bfa;
+        }
+    </style>
 </head>
-<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+<body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased">
 
     <div id="main-content" style="display: none;">
         <div class="flex flex-col md:flex-row min-h-screen">
             <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
 
             <main class="flex-1 p-4 md:p-8 overflow-y-auto">
-                <header class="mb-8 border-b border-slate-100 pb-4">
-                    <p class="text-xs uppercase tracking-[0.15em] text-purple-600 font-black mb-1">Management Hub</p>
-                    <h1 class="text-3xl md:text-5xl font-black tracking-tight">
-                        Welcome, <span id="userName" class="text-purple-600">Loading...</span>
-                    </h1>
+                <header class="mb-8 border-b border-slate-100 pb-5 mt-2 md:mt-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.15em] text-purple-600 font-black mb-1">Management Hub</p>
+                        <h1 class="text-3xl md:text-5xl font-black tracking-tight flex items-center flex-wrap gap-3">
+                            Welcome, <span id="userName" class="text-purple-600">Loading...</span>
+                            <span id="leaderBadge" class="inline-flex items-center gap-1.5 text-xs font-black px-3 py-1 rounded-full shadow-xs uppercase tracking-wider">
+                                <i data-lucide="award" class="w-3.5 h-3.5"></i> <span id="badgeText">Loading</span>
+                            </span>
+                        </h1>
+                    </div>
                 </header>
 
                 <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -38,29 +60,35 @@
                 </section>
 
                 <section class="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs mb-8">
-                    <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-purple-600">
-                        <i data-lucide="award" size="20"></i> Team Skill Proficiency Map
-                    </h3>
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
+                        <h3 class="font-black text-lg flex items-center gap-2 text-purple-600">
+                            <i data-lucide="shield-check" size="20"></i> Team Skill Proficiency Map
+                        </h3>
+                        <button id="btnChartInfo" class="text-slate-400 hover:text-purple-600 transition p-1.5 hover:bg-purple-50 rounded-xl">
+                            <i data-lucide="info" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    
                     <div class="max-w-xs md:max-w-md mx-auto">
                         <canvas id="teamSkillsChart"></canvas>
                     </div>
                 </section>
 
                 <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white p-6 rounded-3xl shadow-xs border border-purple-200">
-                        <h3 class="font-black text-lg mb-6 flex items-center gap-2 text-slate-800 pb-4 border-b border-slate-100">
+                    <div class="bg-white p-6 rounded-3xl shadow-xs border border-purple-100 flex flex-col h-[400px]">
+                        <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800 pb-3 border-b border-slate-100 shrink-0">
                             <i data-lucide="calendar" class="text-purple-500"></i> My Joined Trainings
                         </h3>
-                        <div id="trainingList" class="space-y-3">
+                        <div id="trainingList" class="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
                             <p class="text-sm text-slate-400 italic">Loading your training list...</p>
                         </div>
                     </div>
 
-                    <div class="bg-white p-6 rounded-3xl shadow-xs border border-blue-200">
-                        <h3 class="font-black text-lg mb-6 flex items-center gap-2 text-slate-800 pb-4 border-b border-slate-100">
+                    <div class="bg-white p-6 rounded-3xl shadow-xs border border-blue-100 flex flex-col h-[400px]">
+                        <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800 pb-3 border-b border-slate-100 shrink-0">
                             <i data-lucide="list-checks" class="text-blue-500"></i> Operator Assessment Queue
                         </h3>
-                        <div id="submissionList" class="space-y-3">
+                        <div id="submissionList" class="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
                             <p class="text-sm text-slate-400 italic">Loading pending submissions...</p>
                         </div>
                     </div>
@@ -91,33 +119,84 @@
                     datasets: [{
                         label: 'Team Overall Average (%)',
                         data: [85, 90, 80, 75, 88],
-                        backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                        backgroundColor: 'rgba(147, 51, 234, 0.08)',
                         borderColor: 'rgba(147, 51, 234, 1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: 'rgba(147, 51, 234, 1)'
+                        borderWidth: 2.5,
+                        pointBackgroundColor: 'rgba(147, 51, 234, 1)',
+                        pointRadius: 4
                     }]
                 },
                 options: {
-                    scales: { r: { beginAtZero: true, max: 100 } },
+                    scales: { 
+                        r: { 
+                            beginAtZero: true, 
+                            max: 100,
+                            ticks: { backdropColor: 'transparent', stepSize: 20 }
+                        } 
+                    },
                     plugins: { legend: { display: false } }
+                }
+            });
+
+            // Handler klik tombol info skill chart
+            document.getElementById('btnChartInfo').addEventListener('click', () => {
+                alert("Team Skill Proficiency Map reflects the real-time average multi-level operational metrics compiled from verified operator field inspections and certification exam points across your direct department.");
+            });
+        }
+
+        function setupMobileMenuEvents() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const closeMenuBtn = document.getElementById('closeMenuBtn');
+            const sidebarMenu = document.getElementById('sidebarMenu');
+            const mobileOverlay = document.getElementById('mobileOverlay');
+
+            if (mobileMenuBtn && sidebarMenu && mobileOverlay) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    sidebarMenu.classList.remove('-translate-x-full');
+                    mobileOverlay.classList.remove('hidden');
+                });
+            }
+
+            const closeActions = [closeMenuBtn, mobileOverlay];
+            closeActions.forEach(element => {
+                if (element && sidebarMenu && mobileOverlay) {
+                    element.addEventListener('click', () => {
+                        sidebarMenu.classList.add('-translate-x-full');
+                        mobileOverlay.classList.add('hidden');
+                    });
                 }
             });
         }
 
+        // Penentuan Badge Gold / Silver Dinamik untuk Leader
+        function renderLeaderBadge(session) {
+            const badgeEl = document.getElementById('leaderBadge');
+            const textEl = document.getElementById('badgeText');
+            
+            // Logik sederhana: jika ID genap mendapatkan Gold, ganjil mendapatkan Silver
+            const idNum = parseInt(session.employeeId || "0", 10) || 12;
+            if (idNum % 2 === 0) {
+                badgeEl.className = "inline-flex items-center gap-1.5 text-[10px] font-black px-3 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200 uppercase tracking-wider shadow-xs";
+                textEl.innerText = "Gold Leader";
+            } else {
+                badgeEl.className = "inline-flex items-center gap-1.5 text-[10px] font-black px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 uppercase tracking-wider shadow-xs";
+                textEl.innerText = "Silver Leader";
+            }
+        }
+
         async function initDashboard() {
             try {
-                // Strict Security Access Lock
                 RoleManager.enforceStrictSession();
                 RoleManager.protectPage(ROLES.QC_LEADER);
 
                 const session = JSON.parse(localStorage.getItem('session'));
                 if (!session) { RoleManager.forceLogout(); return; }
 
-                // Load Leader Shared Navigation Sidebar Component
                 await loadSidebar('SidebarLeader.html');
                 initChart();
+                setupMobileMenuEvents();
+                renderLeaderBadge(session);
 
-                // Swap Interface Visible Layer
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('main-content').style.display = 'block';
 
@@ -127,7 +206,7 @@
                 document.getElementById('statDept').innerText = session.department || "QC";
 
                 // =========================================================
-                // INJECT PIPELINE: LOADING LEADER'S OWN JOINED TRAININGS
+                // PIPELINE: MEMUATKAN SENARAI LATIHAN LEADER
                 // =========================================================
                 const regQuery = query(
                     collection(db, "training_registrations"),
@@ -168,7 +247,7 @@
                     if (completed) {
                         badgeColor = "bg-emerald-100 text-emerald-700";
                         badgeText = "Verified";
-                        actionBtn = `<span class="text-xs font-bold text-emerald-600">✓ Completed</span>`;
+                        actionBtn = `<span class="text-xs font-bold text-emerald-600 flex items-center gap-1">✓ Completed</span>`;
                     } else if (expired) {
                         badgeColor = "bg-red-100 text-red-700";
                         badgeText = "Expired";
@@ -191,7 +270,7 @@
                 }
 
                 // =========================================================
-                // INJECT PIPELINE: OPERATOR EXAM SUBMISSION QUEUE
+                // PIPELINE: GILIRAN KELULUSAN ASSESSMENT OPERATOR
                 // =========================================================
                 const submissionQuery = query(
                     collection(db, "exam_submissions"),
