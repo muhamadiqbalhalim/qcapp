@@ -33,7 +33,7 @@
 
 <body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-blue-200">
 
-    <div class="flex flex-col md:flex-row min-h-screen w-full overflow-x-hidden">
+    <div class="flex flex-col md:flex-row min-h-screen">
         <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
 
         <main class="flex-1 p-4 sm:p-6 md:p-8 w-full max-w-full">
@@ -223,27 +223,8 @@
             const targetSidebar = isExec ? 'SidebarExecutive.html' : (isLeader ? 'SidebarLeader.html' : 'SidebarOperator.html');
             await loadSidebar(targetSidebar);
 
-            // UPGRADED FIX: High-coverage event delegation targeting the navbar toggle
-            document.addEventListener('click', (e) => {
-                // Check if user clicked the button element or an SVG icon inside the top header area
-                const clickedToggle = e.target.closest('button') || e.target.closest('.cursor-pointer');
-                
-                if (clickedToggle && (
-                    clickedToggle.id === 'mobileMenuBtn' || 
-                    clickedToggle.querySelector('[data-lucide="menu"]') || 
-                    clickedToggle.innerHTML.includes('svg') ||
-                    e.target.closest('svg')
-                )) {
-                    // Search inside sidebar container for the primary nav menu drawer panel
-                    const navMenuDrawer = document.querySelector('#sidebar-container aside, #sidebar-container nav, #sidebar-container div[class*="fixed"]');
-                    
-                    if (navMenuDrawer) {
-                        // Toggle hidden and sliding transform state cleanly
-                        navMenuDrawer.classList.toggle('hidden');
-                        navMenuDrawer.classList.toggle('-translate-x-full');
-                    }
-                }
-            });
+            // PASANG SOLUSI PENGURUSAN TOGGLE SIDEBAR DI SINI
+            setupSidebarToggle();
 
             // Pasang Event Listeners Navigasi Kalendar
             document.getElementById('prevMonthBtn').addEventListener('click', () => changeMonth(-1));
@@ -254,6 +235,34 @@
 
             // Jalankan muat turun data Firebase & Render utama
             await fetchCalendarData();
+        }
+
+        // Fungsi Global Event Delegation untuk pembukaan menu laci (sidebar drawer) pada Mobile
+        function setupSidebarToggle() {
+            document.addEventListener('click', (e) => {
+                const toggleBtn = e.target.closest('#mobileMenuBtn');
+                const closeBtn = e.target.closest('#closeMenuBtn');
+                const overlay = e.target.closest('#mobileOverlay');
+
+                const sidebarMenu = document.getElementById('sidebarMenu');
+                const mobileOverlay = document.getElementById('mobileOverlay');
+
+                if (!sidebarMenu) return;
+
+                // Logika Buka Drawer
+                if (toggleBtn) {
+                    sidebarMenu.classList.remove('-translate-x-full');
+                    if (mobileOverlay) mobileOverlay.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden'; 
+                }
+
+                // Logika Tutup Drawer
+                if (closeBtn || overlay) {
+                    sidebarMenu.classList.add('-translate-x-full');
+                    if (mobileOverlay) mobileOverlay.classList.add('hidden');
+                    document.body.style.overflow = ''; 
+                }
+            });
         }
 
         async function fetchCalendarData() {
@@ -389,7 +398,6 @@
             const allowedDeps = t.allowedDepartments || ["ALL"];
             document.getElementById('lblOpenTo').textContent = allowedDeps.join(", ");
 
-            // Kira sisa slot semasa
             const regCountSnap = await getCountFromServer(query(collection(db, "training_registrations"), where("trainingId", "==", t.id)));
             const taken = regCountSnap.data().count;
             const max = parseInt(t.seatLimit) || 100;
@@ -399,7 +407,6 @@
             lblSlots.textContent = `${remaining} / ${max}`;
             lblSlots.className = remaining <= 5 ? "font-black text-lg text-red-500" : "font-black text-lg text-emerald-600";
 
-            // Sambungan Pengesahan Pautan Butang Kehadiran
             const hasJoined = registrationsCache.has(t.id);
             const attendStatus = registrationsCache.get(t.id);
             const userDeptAllowed = allowedDeps.includes("ALL") || allowedDeps.includes(user.department);
