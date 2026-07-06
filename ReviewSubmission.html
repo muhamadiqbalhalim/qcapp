@@ -120,7 +120,7 @@
         let currentFilterType = 'all';
         let activeRejectionTarget = null;
 
-        // Fungsi Kawalan Event Klik Hamburger Menu Mobile
+        // Fungsi mengawal klik Hamburger Menu dari Header atas
         function setupMobileMenuEvents() {
             const mobileMenuBtn = document.getElementById('mobileMenuBtn');
             const closeMenuBtn = document.getElementById('closeMenuBtn');
@@ -363,11 +363,11 @@
             filterSubmissions(currentFilterType);
         });
 
-        // Pipeline permulaan aplikasi utama
+        // Memulakan aplikasi utama
         async function initApp() {
             try {
                 await loadSidebar(isLeader ? "SidebarLeader.html" : "SidebarExecutive.html");
-                setupMobileMenuEvents(); // Aktifkan fungsi klik menu hamburger sebaik sahaja sidebar siap dimuatkan
+                setupMobileMenuEvents(); // Aktifkan sistem menu klik daripada header atas
             } catch (e) {
                 console.warn("Sidebar interface build bypassed:", e);
             }
