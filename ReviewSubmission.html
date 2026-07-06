@@ -61,11 +61,17 @@
         <main class="flex-1 p-4 md:p-8 overflow-y-auto">
             <header class="mb-8 border-b border-slate-100 pb-5">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 class="text-3xl md:text-4xl font-black flex items-center gap-3 tracking-tight">
-                            <i data-lucide="file-check" class="text-purple-600"></i> Verification Board
-                        </h1>
-                        <p class="text-slate-500 font-bold text-sm mt-1">Review, crosscheck, and sign off multi-level QA examinations and field inspection audits.</p>
+                    <div class="flex items-center justify-between w-full md:w-auto">
+                        <div>
+                            <h1 class="text-3xl md:text-4xl font-black flex items-center gap-3 tracking-tight">
+                                <i data-lucide="file-check" class="text-purple-600"></i> Verification Board
+                            </h1>
+                            <p class="text-slate-500 font-bold text-sm mt-1">Review, crosscheck, and sign off multi-level QA examinations and field inspection audits.</p>
+                        </div>
+                        
+                        <button id="mobileMenuBtn" class="md:hidden text-slate-500 hover:text-purple-600 focus:outline-none p-2 rounded-xl bg-white border border-slate-200 active:scale-95 transition-all shrink-0 ml-4">
+                            <i data-lucide="menu" class="w-6 h-6"></i>
+                        </button>
                     </div>
                     <div id="roleIndicator" class="text-xs font-black px-4 py-2 rounded-xl border self-start md:self-center shadow-sm uppercase tracking-wider">
                         Verifying Profile...
@@ -113,6 +119,31 @@
         let submissionsMap = { exam: [], inspection: [] };
         let currentFilterType = 'all';
         let activeRejectionTarget = null;
+
+        // Fungsi Kawalan Event Klik Hamburger Menu Mobile
+        function setupMobileMenuEvents() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const closeMenuBtn = document.getElementById('closeMenuBtn');
+            const sidebarMenu = document.getElementById('sidebarMenu');
+            const mobileOverlay = document.getElementById('mobileOverlay');
+
+            if (mobileMenuBtn && sidebarMenu && mobileOverlay) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    sidebarMenu.classList.remove('-translate-x-full');
+                    mobileOverlay.classList.remove('hidden');
+                });
+            }
+
+            const closeActions = [closeMenuBtn, mobileOverlay];
+            closeActions.forEach(element => {
+                if (element && sidebarMenu && mobileOverlay) {
+                    element.addEventListener('click', () => {
+                        sidebarMenu.classList.add('-translate-x-full');
+                        mobileOverlay.classList.add('hidden');
+                    });
+                }
+            });
+        }
 
         window.checkPin = () => {
             if (document.getElementById('pinInput').value === "9999") { 
@@ -232,7 +263,6 @@
             const leaderState = s.leaderApproval?.status || "Pending Verification";
             const execState = s.executiveApproval?.status || "Pending Verification";
 
-            // Logik Dinamik Badge Silver/Gold Mengikut ID Karyawan Operator
             const idNum = parseInt(s.operatorId || "0", 10) || 11;
             const badgeClass = (idNum % 2 === 0) 
                 ? "bg-amber-100 text-amber-700 border-amber-200" 
@@ -333,13 +363,18 @@
             filterSubmissions(currentFilterType);
         });
 
-        try {
-            await loadSidebar(isLeader ? "SidebarLeader.html" : "SidebarExecutive.html");
-        } catch (e) {
-            console.warn("Sidebar interface build bypassed:", e);
+        // Pipeline permulaan aplikasi utama
+        async function initApp() {
+            try {
+                await loadSidebar(isLeader ? "SidebarLeader.html" : "SidebarExecutive.html");
+                setupMobileMenuEvents(); // Aktifkan fungsi klik menu hamburger sebaik sahaja sidebar siap dimuatkan
+            } catch (e) {
+                console.warn("Sidebar interface build bypassed:", e);
+            }
+            lucide.createIcons();
         }
-        
-        lucide.createIcons();
+
+        initApp();
     </script>
 </body>
 </html>
