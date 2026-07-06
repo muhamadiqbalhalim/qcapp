@@ -61,6 +61,9 @@
 
                 await loadSidebar(sidebar);
 
+                // AKTIFKAN FIX: Pasang kawalan pemicu menu sisi untuk peranti mobile
+                setupSidebarToggle();
+
                 if (role === ROLES.QC_LEADER || role === ROLES.EXECUTIVE) {
                     document.getElementById("newTemplateBtn").classList.remove("hidden");
                 }
@@ -70,6 +73,34 @@
             } catch (err) {
                 console.error("Initialization Error:", err);
             }
+        }
+
+        // Fungsi Global Event Delegation untuk kawalan buka/tutup menu sisi pada Mobile
+        function setupSidebarToggle() {
+            document.addEventListener('click', (e) => {
+                const toggleBtn = e.target.closest('#mobileMenuBtn');
+                const closeBtn = e.target.closest('#closeMenuBtn');
+                const overlay = e.target.closest('#mobileOverlay');
+
+                const sidebarMenu = document.getElementById('sidebarMenu');
+                const mobileOverlay = document.getElementById('mobileOverlay');
+
+                if (!sidebarMenu) return;
+
+                // Membuka Drawer Menu Sisi
+                if (toggleBtn) {
+                    sidebarMenu.classList.remove('-translate-x-full');
+                    if (mobileOverlay) mobileOverlay.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden'; 
+                }
+
+                // Menutup Drawer Menu Sisi
+                if (closeBtn || overlay) {
+                    sidebarMenu.classList.add('-translate-x-full');
+                    if (mobileOverlay) mobileOverlay.classList.add('hidden');
+                    document.body.style.overflow = ''; 
+                }
+            });
         }
 
         async function fetchInspections(session) {
