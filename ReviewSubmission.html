@@ -56,7 +56,7 @@
     </div>
 
     <div class="flex flex-col md:flex-row min-h-screen">
-        <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+        <div id="sidebar-container" class="w-full md:w-auto z-50"></div>
 
         <main class="flex-1 p-4 md:p-8 overflow-y-auto">
             <header class="mb-8 border-b border-slate-100 pb-5">
@@ -68,10 +68,6 @@
                             </h1>
                             <p class="text-slate-500 font-bold text-sm mt-1">Review, crosscheck, and sign off multi-level QA examinations and field inspection audits.</p>
                         </div>
-                        
-                        <button id="mobileMenuBtn" class="md:hidden text-slate-500 hover:text-purple-600 focus:outline-none p-2 rounded-xl bg-white border border-slate-200 active:scale-95 transition-all shrink-0 ml-4">
-                            <i data-lucide="menu" class="w-6 h-6"></i>
-                        </button>
                     </div>
                     <div id="roleIndicator" class="text-xs font-black px-4 py-2 rounded-xl border self-start md:self-center shadow-sm uppercase tracking-wider">
                         Verifying Profile...
@@ -95,7 +91,7 @@
         import { loadSidebar } from './js/sidebar-loader.js';
         import { RoleManager, ROLES } from './js/Roles.js';
 
-        // Secure active system session layers
+        // Secure active user authorization layer
         RoleManager.enforceStrictSession();
         RoleManager.protectPage(ROLES.QC_LEADER, ROLES.EXECUTIVE);
 
@@ -121,7 +117,7 @@
         let currentFilterType = 'all';
         let activeRejectionTarget = null;
 
-        // Binds event triggers for controlling the mobile navigation menu via the upper header layout element
+        // Binds event triggers for controlling mobile navigation drawer via the modular side component click target selectors
         function setupMobileMenuEvents() {
             const mobileMenuBtn = document.getElementById('mobileMenuBtn');
             const closeMenuBtn = document.getElementById('closeMenuBtn');
@@ -189,6 +185,7 @@
             }
         });
 
+        // Pipeline system matching approval state status transitions accurately
         async function executeStatusUpdate(subId, targetStatus, reason = "", isInspection) {
             try {
                 const colName = isInspection ? "inspection_submissions" : "exam_submissions";
@@ -201,6 +198,7 @@
                         reason: reason,
                         processedAt: new Date()
                     };
+                    // Multi-staged logic workflow configuration
                     updatePayload.status = (targetStatus === 'Approved') ? "pending_exec" : "Rejected";
                 } else {
                     updatePayload.executiveApproval = {
@@ -209,6 +207,7 @@
                         reason: reason,
                         processedAt: new Date()
                     };
+                    // Executive sign-off routes cleanly straight into fully Approved state status flag
                     updatePayload.status = (targetStatus === 'Approved') ? "Approved" : "Rejected";
                 }
 
@@ -364,11 +363,12 @@
             filterSubmissions(currentFilterType);
         });
 
-        // Application main entry pipeline function
+        // Initialization runtime lifecycle wrapper function
         async function initApp() {
             try {
+                // Dynamically fetch and display layout modules matching authority states
                 await loadSidebar(isLeader ? "SidebarLeader.html" : "SidebarExecutive.html");
-                setupMobileMenuEvents(); // Initialize click events once sidebar markup has successfully loaded
+                setupMobileMenuEvents(); // Attaches toggle listeners onto active layout elements
             } catch (e) {
                 console.warn("Sidebar interface build bypassed:", e);
             }
