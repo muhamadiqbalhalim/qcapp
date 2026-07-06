@@ -11,7 +11,7 @@
 
     <div id="main-content" style="display: none;">
         <div class="flex flex-col md:flex-row min-h-screen">
-            <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+            <div id="sidebar-container" class="w-full md:w-auto z-50"></div>
 
             <main class="flex-1 p-4 md:p-8 overflow-y-auto">
                 <header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-5">
@@ -24,8 +24,7 @@
                     </button>
                 </header>
 
-                <div id="examGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    </div>
+                <div id="examGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
             </main>
         </div>
     </div>
@@ -43,22 +42,23 @@
         import { loadSidebar } from './js/sidebar-loader.js';
         import { ROLES, RoleManager } from './js/Roles.js';
 
-        // Strict Access Control Guard
+        // Strict Access Control Session Security Guards
         RoleManager.enforceStrictSession();
         RoleManager.protectPage(ROLES.QC_LEADER, ROLES.EXECUTIVE);
 
         const user = JSON.parse(localStorage.getItem("session"));
 
+        // Application main layout initialization pipeline loop
         async function initPage() {
             try {
-                // Dinamik load sidebar mengikut peranan akaun semasa
+                // Dynamically load sidebar asset sheets based on active operational profiles
                 const targetSidebar = user.role === ROLES.EXECUTIVE ? 'SidebarExecutive.html' : 'SidebarLeader.html';
                 await loadSidebar(targetSidebar);
 
-                // Tarik maklumat peperiksaan
+                // Fetch exam configurations from backend database service collections
                 await loadExams();
 
-                // Swap visual layers
+                // Swap visual rendering view layers smoothly
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('main-content').style.display = 'block';
                 lucide.createIcons();
@@ -68,6 +68,7 @@
             }
         }
 
+        // Retrieves exam datasets and compiles interactive status blocks dynamically
         async function loadExams() {
             const grid = document.getElementById('examGrid');
             const snap = await getDocs(collection(db, "qc_exams"));
@@ -79,17 +80,18 @@
                     <i data-lucide="folder-open" class="mx-auto text-slate-300 mb-3" size="40"></i>
                     <p class="text-sm font-medium text-slate-400 italic">No exams configurations registered inside the collection database yet.</p>
                 `;
+                lucide.createIcons();
                 return;
             }
 
-            // Restore template grid layout style context
+            // Restore responsive grid styling behaviors
             grid.className = "grid grid-cols-1 lg:grid-cols-2 gap-6";
 
             snap.forEach(d => {
                 const exam = d.data();
                 const creator = exam.createdBy || {}; 
                 
-                // Safe checking handler untuk timestamp format data
+                // Safe checking handler metrics matching date object variations
                 let date = 'N/A';
                 if (exam.createdAt) {
                     date = typeof exam.createdAt.toDate === 'function' 
@@ -106,7 +108,7 @@
                     <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex flex-col justify-between transition-all hover:shadow-sm">
                         <div>
                             <div class="flex justify-between items-start gap-4 mb-4">
-                                <h3 class="font-black text-slate-800 text-lg leading-snug truncate">${exam.title || "Untitled Evaluation Exam"}</h3>
+                                <h3 class="font-black text-slate-800 text-lg leading-snug truncate" title="${exam.title || 'Untitled Assessment'}">${exam.title || "Untitled Evaluation Exam"}</h3>
                                 <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0 ${statusBadgeStyle}">
                                     ${exam.status || 'inactive'}
                                 </span>
@@ -135,7 +137,7 @@
             lucide.createIcons();
         }
 
-        // Global context execution registration binding wrapper links
+        // Global access context mapping for toggling visibility status parameters on template components
         window.toggleStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
             try {
@@ -147,7 +149,7 @@
             }
         };
 
-        // Initialize execution sequence
+        // Initialize script logic executions
         initPage();
     </script>
 </body>
