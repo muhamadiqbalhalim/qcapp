@@ -124,8 +124,6 @@
         // Binds event triggers for controlling mobile navigation drawer via modular elements
         function setupMobileMenuEvents() {
             const container = document.getElementById('sidebar-container');
-            
-            // Checks for trigger target button inside the main layout or within the loaded sidebar component
             const toggleBtn = document.getElementById("mobileSidebarToggle") || container.querySelector("#mobileSidebarToggle") || container.querySelector("button");
             const sidebar = container.querySelector("#mainSidebar") || document.getElementById('sidebarMenu');
             const backdrop = container.querySelector("#sidebarBackdrop") || document.getElementById('mobileOverlay');
@@ -155,13 +153,13 @@
             
             backdrop.addEventListener("click", toggleSidebar);
 
-            // Handle sub component fallback close trigger buttons if they exist
             const closeMenuBtn = container.querySelector("#closeMenuBtn") || document.getElementById('closeMenuBtn');
             if (closeMenuBtn) {
                 closeMenuBtn.addEventListener('click', toggleSidebar);
             }
         }
 
+        // Global function context definitions
         window.checkPin = () => {
             if (document.getElementById('pinInput').value === "9999") { 
                 sessionStorage.setItem('access_granted', 'true');
@@ -171,10 +169,6 @@
                 document.getElementById('pinInput').value = ""; 
             }
         };
-
-        if (sessionStorage.getItem('access_granted') === 'true') {
-            document.getElementById('pinOverlay').classList.add('hidden');
-        }
 
         window.closeRejectionModal = () => {
             document.getElementById('rejectionModal').classList.add('hidden');
@@ -389,6 +383,14 @@
             } catch (e) {
                 console.warn("Sidebar interface build bypassed:", e);
             }
+
+            // CRITICAL PROTECTION FIX: Enforce overlay state AFTER sidebar scripts run to prevent external file bypass glitches
+            if (sessionStorage.getItem('access_granted') === 'true') {
+                document.getElementById('pinOverlay').classList.add('hidden');
+            } else {
+                document.getElementById('pinOverlay').classList.remove('hidden');
+            }
+
             if (window.lucide) lucide.createIcons();
         }
 
