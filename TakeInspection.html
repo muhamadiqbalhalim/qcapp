@@ -68,7 +68,7 @@
 
         const mandatoryGroups = [];
         let totalBenchmarkedCT = 0;
-        let inspectionStartTime = Date.now(); // Ambil penanda masa mula untuk log kemahiran
+        let inspectionStartTime = Date.now(); 
 
         // Sistem Pemasa Visual Harian
         setInterval(() => {
@@ -113,12 +113,12 @@
                 const data = snap.data();
                 document.getElementById('title').innerText = data.title;
 
-                // Kira jumlah had masa kitaran standard (CT) untuk rujukan kelajuan
                 const calcTotalCT = (arr) => arr.reduce((acc, row) => acc + (parseInt(row.ct) || 0), 0);
                 totalBenchmarkedCT = calcTotalCT(data.lh || []) + calcTotalCT(data.rh || []);
 
-                renderSection('LEFT HAND (LH)', data.lh || [], 'border-amber-100', 'text-amber-600');
-                renderSection('RIGHT HAND (RH)', data.rh || [], 'border-blue-100', 'text-blue-600');
+                // Ditambah 'LH' dan 'RH' prefix untuk elakkan id bertindih
+                renderSection('LEFT HAND (LH)', data.lh || [], 'border-amber-100', 'text-amber-600', 'LH');
+                renderSection('RIGHT HAND (RH)', data.rh || [], 'border-blue-100', 'text-blue-600', 'RH');
 
             } catch (error) {
                 console.error("Initialization error:", error);
@@ -126,7 +126,8 @@
             }
         }
 
-        function renderSection(title, rows, borderClass, textClass) {
+        // Ditambah parameter sectionPrefix (LH/RH)
+        function renderSection(title, rows, borderClass, textClass, sectionPrefix) {
             const container = document.getElementById('inspectionContainer');
             const section = document.createElement('div');
             section.className = `bg-white p-4 md:p-6 rounded-3xl border shadow-sm ${borderClass}`;
@@ -157,9 +158,9 @@
                         <td class="p-3 border"><img src="${row.referenceImg || ''}" onclick="window.open('${row.referenceImg || ''}')" class="w-12 h-12 object-cover mx-auto cursor-pointer rounded border" alt="Reference"></td>
                         <td class="p-3 border">${row.method || ''}</td>
                         <td class="p-3 border">${row.ct ?? 0}s</td>
-                        ${renderRadio(row.inspMandatory, 'insp', row.id)}
-                        ${renderRadio(row.keyPtMandatory, 'keyPt', row.id)}
-                        ${renderRadio(row.seqMandatory, 'seq', row.id)}
+                        ${renderRadio(row.inspMandatory, 'insp', row.id, sectionPrefix)}
+                        ${renderRadio(row.keyPtMandatory, 'keyPt', row.id, sectionPrefix)}
+                        ${renderRadio(row.seqMandatory, 'seq', row.id, sectionPrefix)}
                     </tr>`;
             });
             html += `</tbody></table></div>`;
@@ -167,9 +168,10 @@
             container.appendChild(section);
         }
 
-        function renderRadio(isMandatory, type, rowId) {
+        // Menggunakan prefix bagi menjamin nama radio sentiasa unik
+        function renderRadio(isMandatory, type, rowId, sectionPrefix) {
             if (!isMandatory) return `<td class="p-3 border text-slate-200 font-bold">N/A</td>`;
-            const name = `${type}_${rowId}`;
+            const name = `${sectionPrefix}_${type}_${rowId}`;
             
             if (!mandatoryGroups.includes(name)) {
                 mandatoryGroups.push(name);
@@ -217,7 +219,6 @@
             submitBtn.disabled = true;
             submitBtn.innerText = "Submitting...";
 
-            // LOGIK KALKULATOR PRESTASI KEMAHIRAN (SKILLS CHART METRICS)
             const actualTimeSpentSeconds = Math.floor((Date.now() - inspectionStartTime) / 1000);
             let totalRadioChecked = 0;
             let defectFailCounts = 0;
@@ -228,12 +229,12 @@
                 results[input.name] = input.value;
                 totalRadioChecked++;
                 
-                // Jika operator pilih ralat/defect (fail)
                 if (input.value === 'fail') {
-                    if (input.name.startsWith('insp') || input.name.startsWith('keyPt')) {
+                    // Penukaran regex supayat sepadan dengan struktur nama baru (LH_insp_1 atau RH_keyPt_2)
+                    if (/_insp_|_keyPt_/.test(input.name)) {
                         defectFailCounts++;
                     }
-                    if (input.name.startsWith('seq')) {
+                    if (/_seq_/.test(input.name)) {
                         sequenceSopErrors++;
                     }
                 }
@@ -244,7 +245,6 @@
             const userName = operatorSession?.name || "Operator";
 
             try {
-                // 1. Simpan rekod semakan penuh untuk Aliran Kerja Kelulusan sedia ada
                 await addDoc(collection(db, "inspection_submissions"), {
                     templateId: templateId,
                     operatorId: userId,
@@ -259,30 +259,27 @@
                     submittedAt: serverTimestamp()
                 });
 
-                // 2. JAMBATAN INTEGRASI DATA KEMAHIRAN REAL-TIME (Dihubungkan terus ke SkillsChart.html)
-                // Kira peratusan kecekapan kitaran masa (Maksimum 100%)
                 let timeEfficiencyScore = 100;
                 if (actualTimeSpentSeconds > totalBenchmarkedCT && totalBenchmarkedCT > 0) {
                     timeEfficiencyScore = Math.max(30, Math.round((totalBenchmarkedCT / actualTimeSpentSeconds) * 100));
                 }
 
-                // Kira peratusan pematuhan SOP turutan kerja
-                const totalSeqItems = mandatoryGroups.filter(g => g.startsWith('seq_')).length;
+                // Logik pembersihan untuk pengiraan chart harian kekal tepat
+                const totalSeqItems = mandatoryGroups.filter(g => /_seq_/.test(g)).length;
                 let sopAdherenceScore = 100;
                 if (totalSeqItems > 0) {
                     sopAdherenceScore = Math.round(((totalSeqItems - sequenceSopErrors) / totalSeqItems) * 100);
                 }
 
-                // Kira anggaran ketepatan pengesanan kecacatan harian
                 let detectionAccuracyScore = totalRadioChecked > 0 ? Math.round(((totalRadioChecked - defectFailCounts) / totalRadioChecked) * 100) : 100;
 
                 await addDoc(collection(db, "inspection_logs"), {
                     operatorId: userId,
                     operatorName: userName,
                     templateId: templateId,
-                    cycleTimeMastery: timeEfficiencyScore,     // Menghidupkan paksi Kelajuan CT
-                    sequenceAdherence: sopAdherenceScore,       // Menghidupkan paksi SOP Disiplin
-                    defectDetectionRate: detectionAccuracyScore, // Menghidupkan paksi Ketepatan Ralat
+                    cycleTimeMastery: timeEfficiencyScore,     
+                    sequenceAdherence: sopAdherenceScore,       
+                    defectDetectionRate: detectionAccuracyScore, 
                     timestamp: serverTimestamp()
                 });
 

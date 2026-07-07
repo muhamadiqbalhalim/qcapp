@@ -156,10 +156,13 @@
             }
             
             questions.forEach((q, index) => {
+                // Diperbaiki: Ditambah semakan alternatif jika objek menggunakan medan .question atau .questionText
+                const questionText = q.question || q.text || q.questionText || "Sila nyatakan jenis kecacatan komponen.";
+                
                 container.innerHTML += `
                     <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm question-block" data-index="${index}">
                         ${q.imageUrl ? `<img src="${q.imageUrl}" class="w-full max-h-72 object-contain rounded-2xl mb-4 bg-slate-50 border border-slate-100" alt="Defect Sample">` : ''}
-                        <h4 class="font-black text-slate-800 text-base mb-4"><span class="text-blue-600 mr-1">Q${index + 1}.</span> ${q.text}</h4>
+                        <h4 class="font-black text-slate-800 text-base mb-4"><span class="text-blue-600 mr-1">Q${index + 1}.</span> ${questionText}</h4>
                         <div class="space-y-2.5">
                             ${q.options.map((opt, i) => {
                                 const letter = String.fromCharCode(65 + i);
@@ -232,7 +235,10 @@
                     const selected = document.querySelector(`input[name="q${index}"]:checked`);
                     const chosenValue = selected ? selected.value : "";
                     userResults[`q${index}`] = chosenValue;
-                    if (chosenValue === q.correct) score++;
+                    
+                    // Diperbaiki: Sokongan dinamik untuk skema jawapan Firestore (correct / correctAnswer / correctSolutionKey)
+                    const correctAnswerKey = q.correct || q.correctAnswer || q.correctSolutionKey || "";
+                    if (chosenValue === correctAnswerKey) score++;
                 });
             }
 
