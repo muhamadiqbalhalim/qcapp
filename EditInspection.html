@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Inspection Template | QC Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 font-sans">
+
+    <div id="main-content" style="display: none;">
+        <div class="flex flex-col md:flex-row min-h-screen">
+            <div id="sidebar-container" class="w-full md:w-auto md:sticky md:top-0 md:h-screen z-50 shrink-0"></div>
+
+            <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+                <header class="mb-8 border-b border-slate-100 pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.15em] text-purple-600 font-black mb-1">Standardized Matrix Engine</p>
+                        <h1 class="text-3xl font-black tracking-tight text-slate-800">Modify Inspection Template</h1>
+                        <p class="text-slate-400 font-medium text-xs mt-1">Update asymmetric dual inspection schema records and linked digital media layers.</p>
+                    </div>
+                    <button onclick="window.location.href='InspectionList.html'" class="text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-100 px-4 py-2 rounded-xl transition-colors shrink-0 self-start sm:self-center">
+                        Back to List
+                    </button>
+                </header>
+
+                <div class="max-w-7xl mx-auto space-y-8">
+                    <div>
+                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Operational Template Title Identifier</label>
+                        <input type="text" id="templateTitle" placeholder="e.g., T006-C ARM ASSY (Dual Configuration Layout)" 
+                               class="w-full text-base font-bold p-4 rounded-2xl border border-slate-200 shadow-xs outline-none bg-white focus:ring-2 focus:ring-purple-100 transition-all">
+                    </div>
+
+                    <div class="bg-white p-4 md:p-6 rounded-3xl border border-slate-200 shadow-xs">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="p-1.5 bg-amber-50 rounded-lg text-amber-600"><i data-lucide="arrow-left-circle" size="18"></i></span>
+                            <h2 class="text-lg font-black text-amber-600 tracking-tight">LEFT HAND (LH) OPERATIONS SCHEMA</h2>
+                        </div>
+                        <div class="overflow-x-auto w-full pb-2">
+                            <table class="w-full text-[11px] text-center border-collapse min-w-[1000px]">
+                                <thead class="bg-slate-50 uppercase text-[10px] text-slate-400 font-black tracking-wider border-b border-slate-100">
+                                    <tr>
+                                        <th class="p-2.5 text-left w-12">ID</th>
+                                        <th class="p-2.5 text-left min-w-[140px]">Inspection Item</th>
+                                        <th class="p-2.5 text-left min-w-[120px]">Criteria Details</th>
+                                        <th class="p-2.5 text-left min-w-[130px]">Standard Asset</th>
+                                        <th class="p-2.5 w-14">Rank</th>
+                                        <th class="p-2.5 text-left min-w-[110px]">Key Point Check</th>
+                                        <th class="p-2.5 text-left min-w-[130px]">Reference Asset</th>
+                                        <th class="p-2.5 text-left min-w-[110px]">Methodology</th>
+                                        <th class="p-2.5 w-14">CT (s)</th>
+                                        <th class="p-2.5 w-12 text-center">Insp</th>
+                                        <th class="p-2.5 w-12 text-center">KeyPt</th>
+                                        <th class="p-2.5 w-12 text-center">Seq</th>
+                                        <th class="p-2.5 w-12 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rowsLH" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                        <button onclick="addRow('rowsLH')" class="mt-4 w-full py-3 border-2 border-dashed border-amber-200 text-amber-600 font-bold rounded-xl hover:bg-amber-50/50 hover:border-amber-300 transition-all flex items-center justify-center gap-1.5 text-xs">
+                            <i data-lucide="plus" size="14"></i> Add LH Component Row
+                        </button>
+                    </div>
+
+                    <div class="bg-white p-4 md:p-6 rounded-3xl border border-slate-200 shadow-xs">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="p-1.5 bg-blue-50 rounded-lg text-blue-600"><i data-lucide="arrow-right-circle" size="18"></i></span>
+                            <h2 class="text-lg font-black text-blue-600 tracking-tight">RIGHT HAND (RH) OPERATIONS SCHEMA</h2>
+                        </div>
+                        <div class="overflow-x-auto w-full pb-2">
+                            <table class="w-full text-[11px] text-center border-collapse min-w-[1000px]">
+                                <thead class="bg-slate-50 uppercase text-[10px] text-slate-400 font-black tracking-wider border-b border-slate-100">
+                                    <tr>
+                                        <th class="p-2.5 text-left w-12">ID</th>
+                                        <th class="p-2.5 text-left min-w-[140px]">Inspection Item</th>
+                                        <th class="p-2.5 text-left min-w-[120px]">Criteria Details</th>
+                                        <th class="p-2.5 text-left min-w-[130px]">Standard Asset</th>
+                                        <th class="p-2.5 w-14">Rank</th>
+                                        <th class="p-2.5 text-left min-w-[110px]">Key Point Check</th>
+                                        <th class="p-2.5 text-left min-w-[130px]">Reference Asset</th>
+                                        <th class="p-2.5 text-left min-w-[110px]">Methodology</th>
+                                        <th class="p-2.5 w-14">CT (s)</th>
+                                        <th class="p-2.5 w-12 text-center">Insp</th>
+                                        <th class="p-2.5 w-12 text-center">KeyPt</th>
+                                        <th class="p-2.5 w-12 text-center">Seq</th>
+                                        <th class="p-2.5 w-12 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rowsRH" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                        <button onclick="addRow('rowsRH')" class="mt-4 w-full py-3 border-2 border-dashed border-blue-200 text-blue-600 font-bold rounded-xl hover:bg-blue-50/50 hover:border-blue-300 transition-all flex items-center justify-center gap-1.5 text-xs">
+                            <i data-lucide="plus" size="14"></i> Add RH Component Row
+                        </button>
+                    </div>
+
+                    <button id="saveBtn" onclick="saveTemplate()" class="w-full py-5 bg-purple-600 text-white font-black rounded-2xl shadow-sm hover:bg-purple-700 transition-colors uppercase text-sm tracking-wider flex items-center justify-center gap-2">
+                        <i data-lucide="save" size="18"></i> Update Template Changes
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="loading" class="flex justify-center items-center h-screen bg-[#F8FAFC]">
+        <div class="text-center">
+            <i data-lucide="loader-2" class="animate-spin text-purple-600 mx-auto" size="40"></i>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-3">Fetching Template Parameters...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/FirebaseConfig.js';
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+        import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { loadSidebar } from './js/sidebar-loader.js';
+        import { ROLES, RoleManager } from './js/Roles.js';
+
+        // Session Protection Guard
+        RoleManager.enforceStrictSession();
+        RoleManager.protectPage(ROLES.QC_LEADER, ROLES.EXECUTIVE);
+
+        const storage = getStorage();
+        const sessionData = JSON.parse(localStorage.getItem("session"));
+        
+        // Extract Template Target ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const templateId = urlParams.get('editId');
+
+        if (!templateId) {
+            alert("Missing required configuration request parameter 'editId'.");
+            window.location.href = "InspectionList.html";
+        }
+
+        // Unified System Sidebar Drawer Interaction Engine
+        function setupSidebarToggle() {
+            const container = document.getElementById('sidebar-container');
+            
+            const toggleBtn = container.querySelector("#mobileSidebarToggle") || document.getElementById("mobileSidebarToggle") || document.getElementById('mobileMenuBtn');
+            const sidebar = container.querySelector("#mainSidebar") || document.getElementById('sidebarMenu') || container.querySelector("aside");
+            const backdrop = container.querySelector("#sidebarBackdrop") || document.getElementById('mobileOverlay') || container.querySelector(".backdrop-blur-sm");
+            
+            if (!toggleBtn || !sidebar || !backdrop) return;
+
+            function toggleSidebar() {
+                const isOpen = !sidebar.classList.contains("-translate-x-full");
+                if (isOpen) {
+                    sidebar.classList.add("-translate-x-full");
+                    backdrop.classList.add("hidden");
+                    backdrop.classList.remove("opacity-100");
+                    toggleBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
+                    document.body.style.overflow = ''; 
+                } else {
+                    sidebar.classList.remove("-translate-x-full");
+                    backdrop.classList.remove("hidden");
+                    setTimeout(() => backdrop.classList.add("opacity-100"), 10);
+                    toggleBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
+                    document.body.style.overflow = 'hidden'; 
+                }
+                if (window.lucide) lucide.createIcons();
+            }
+
+            toggleBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggleSidebar();
+            });
+            
+            backdrop.addEventListener("click", toggleSidebar);
+
+            const closeMenuBtn = container.querySelector("#closeMenuBtn") || document.getElementById('closeMenuBtn');
+            if (closeMenuBtn) {
+                closeMenuBtn.addEventListener('click', toggleSidebar);
+            }
+        }
+
+        window.addRow = (containerId, initialData = null) => {
+            const tbody = document.getElementById(containerId);
+            const tr = document.createElement('tr');
+            tr.className = "inspection-row bg-white hover:bg-slate-50/50 transition-colors";
+            
+            // Render content logic
+            tr.innerHTML = `
+                <td class="p-1.5"><input type="text" value="${initialData?.id || ''}" class="r-id w-full p-2 border border-slate-200 rounded-xl text-center font-bold text-slate-700 outline-none focus:ring-1 focus:ring-purple-200"></td>
+                <td class="p-1.5"><input type="text" value="${initialData?.item || ''}" class="r-item w-full p-2 border border-slate-200 rounded-xl font-medium outline-none focus:ring-1 focus:ring-purple-200"></td>
+                <td class="p-1.5"><input type="text" value="${initialData?.criteria || ''}" class="r-crit w-full p-2 border border-slate-200 rounded-xl font-medium outline-none focus:ring-1 focus:ring-purple-200"></td>
+                <td class="p-1.5 text-left">
+                    <input type="file" accept="image/*" onchange="validateUploadPayload(this)" class="r-std w-full text-[10px] text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-600 file:font-bold hover:file:bg-slate-200">
+                    ${initialData?.standardImg ? `<a href="${initialData.standardImg}" target="_blank" class="r-std-link text-[10px] text-purple-600 font-bold block mt-1 hover:underline truncate max-w-[120px]">View Current Asset</a>` : ''}
+                </td>
+                <td class="p-1.5"><input type="text" value="${initialData?.rank || ''}" class="r-rank w-full p-2 border border-slate-200 rounded-xl text-center font-bold text-slate-700 outline-none"></td>
+                <td class="p-1.5"><input type="text" value="${initialData?.keyPoint || ''}" class="r-kp w-full p-2 border border-slate-200 rounded-xl font-medium outline-none"></td>
+                <td class="p-1.5 text-left">
+                    <input type="file" accept="image/*" onchange="validateUploadPayload(this)" class="r-ref w-full text-[10px] text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-600 file:font-bold hover:file:bg-slate-200">
+                    ${initialData?.referenceImg ? `<a href="${initialData.referenceImg}" target="_blank" class="r-ref-link text-[10px] text-purple-600 font-bold block mt-1 hover:underline truncate max-w-[120px]">View Current Asset</a>` : ''}
+                </td>
+                <td class="p-1.5"><input type="text" value="${initialData?.method || ''}" class="r-method w-full p-2 border border-slate-200 rounded-xl font-medium outline-none"></td>
+                <td class="p-1.5"><input type="number" step="any" value="${initialData?.ct || ''}" class="r-ct w-full p-2 border border-slate-200 rounded-xl text-center font-mono"></td>
+                <td class="p-1.5 text-center"><input type="checkbox" ${initialData?.inspMandatory ? 'checked' : ''} class="r-insp rounded text-purple-600 focus:ring-purple-200 h-4 w-4 border-slate-300"></td>
+                <td class="p-1.5 text-center"><input type="checkbox" ${initialData?.keyPtMandatory ? 'checked' : ''} class="r-keypt rounded text-purple-600 focus:ring-purple-200 h-4 w-4 border-slate-300"></td>
+                <td class="p-1.5 text-center"><input type="checkbox" ${initialData?.seqMandatory ? 'checked' : ''} class="r-seq rounded text-purple-600 focus:ring-purple-200 h-4 w-4 border-slate-300"></td>
+                <td class="p-1.5 text-center">
+                    <button type="button" onclick="this.closest('tr').remove()" class="text-slate-400 hover:text-red-500 transition-colors p-1">
+                        <i data-lucide="trash-2" size="14"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.validateUploadPayload = (input) => {
+            if (input.files && input.files[0]) {
+                if (input.files[0].size > 5 * 1024 * 1024) {
+                    alert("Media element parameter constraints broken! Maximum allowed threshold size cap limit is 5MB.");
+                    input.value = "";
+                }
+            }
+        };
+
+        const processRows = async (containerId) => {
+            const rows = [];
+            const targetedElements = document.querySelectorAll(`#${containerId} .inspection-row`);
+            
+            for (let r of targetedElements) {
+                const stdFile = r.querySelector('.r-std').files[0];
+                const refFile = r.querySelector('.r-ref').files[0];
+                
+                // Keep the current image link context if no new document payload override is selected
+                const existingStdUrl = r.querySelector('.r-std-link')?.getAttribute('href') || null;
+                const existingRefUrl = r.querySelector('.r-ref-link')?.getAttribute('href') || null;
+
+                let stdUrl = existingStdUrl;
+                let refUrl = existingRefUrl;
+
+                if (stdFile) {
+                    const sRef = ref(storage, 'insp/' + Date.now() + '_std_' + stdFile.name);
+                    await uploadBytes(sRef, stdFile);
+                    stdUrl = await getDownloadURL(sRef);
+                }
+                if (refFile) {
+                    const rRef = ref(storage, 'insp/' + Date.now() + '_ref_' + refFile.name);
+                    await uploadBytes(rRef, refFile);
+                    refUrl = await getDownloadURL(rRef);
+                }
+
+                rows.push({
+                    id: r.querySelector('.r-id').value.trim(),
+                    item: r.querySelector('.r-item').value.trim(),
+                    criteria: r.querySelector('.r-crit').value.trim(),
+                    standardImg: stdUrl,
+                    rank: r.querySelector('.r-rank').value.trim(),
+                    keyPoint: r.querySelector('.r-kp').value.trim(),
+                    referenceImg: refUrl,
+                    method: r.querySelector('.r-method').value.trim(),
+                    ct: r.querySelector('.r-ct').value ? parseFloat(r.querySelector('.r-ct').value) : 0,
+                    inspMandatory: r.querySelector('.r-insp').checked,
+                    keyPtMandatory: r.querySelector('.r-keypt').checked,
+                    seqMandatory: r.querySelector('.r-seq').checked
+                });
+            }
+            return rows;
+        };
+
+        async function loadData() {
+            try {
+                // Initialize Dynamic Navigation Frame
+                const targetSidebar = sessionData.role === ROLES.EXECUTIVE ? 'SidebarExecutive.html' : 'SidebarLeader.html';
+                await loadSidebar(targetSidebar);
+                setupSidebarToggle();
+
+                // Fetch Database Values
+                const docSnap = await getDoc(doc(db, "inspection_templates", templateId));
+                if (!docSnap.exists()) {
+                    alert("The requested template data node was not discovered inside firestore references.");
+                    window.location.href = "InspectionList.html";
+                    return;
+                }
+
+                const data = docSnap.data();
+                document.getElementById('templateTitle').value = data.title || '';
+
+                // Populate LH Rows
+                if (data.lh && data.lh.length > 0) {
+                    data.lh.forEach(item => addRow('rowsLH', item));
+                } else {
+                    addRow('rowsLH');
+                }
+
+                // Populate RH Rows
+                if (data.rh && data.rh.length > 0) {
+                    data.rh.forEach(item => addRow('rowsRH', item));
+                } else {
+                    addRow('rowsRH');
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                if (window.lucide) lucide.createIcons();
+
+            } catch (err) {
+                console.error("Critical Matrix Load Failure:", err);
+                alert("Failed to safely bundle access profiles workspace: " + err.message);
+            }
+        }
+
+        window.saveTemplate = async () => {
+            const titleInput = document.getElementById('templateTitle').value.trim();
+            if (!titleInput) {
+                alert("Template structural identifier title profile cannot be left blank empty!");
+                return;
+            }
+
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = `<i data-lucide="loader-2" class="animate-spin" size="16"></i> Updating Matrix Storage...`;
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                const lh = await processRows('rowsLH');
+                const rh = await processRows('rowsRH');
+
+                await updateDoc(doc(db, "inspection_templates", templateId), {
+                    title: titleInput,
+                    lh, 
+                    rh
+                });
+
+                alert("Asymmetric dual system testing template updated successfully!");
+                window.location.href = "InspectionList.html";
+            } catch (e) {
+                console.error("Storage Stream Write Failure Mapping:", e);
+                alert("Failed to commit modifications pipeline: " + e.message);
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = `<i data-lucide="save" size="18"></i> Update Template Changes`;
+                if (window.lucide) lucide.createIcons();
+            }
+        };
+
+        // Execution Core Trigger Line
+        loadData();
+    </script>
+</body>
+</html>

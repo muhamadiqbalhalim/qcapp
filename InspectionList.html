@@ -41,6 +41,8 @@
         import { loadSidebar } from './js/sidebar-loader.js';
         import { ROLES, RoleManager } from './js/Roles.js';
 
+        let userRole = null; // Store globally within script module to reference when rendering cards
+
         async function init() {
             try {
                 RoleManager.protectPage(
@@ -50,12 +52,12 @@
                 );
 
                 const session = JSON.parse(localStorage.getItem("session"));
-                const role = session.role;
+                userRole = session.role;
                 let sidebar = "SidebarOperator.html";
 
-                if (role === ROLES.QC_LEADER) {
+                if (userRole === ROLES.QC_LEADER) {
                     sidebar = "SidebarLeader.html";
-                } else if (role === ROLES.EXECUTIVE) {
+                } else if (userRole === ROLES.EXECUTIVE) {
                     sidebar = "SidebarExecutive.html";
                 }
 
@@ -64,7 +66,7 @@
                 // Initialize menu click event configurations immediately after the sidebar finishes injection
                 setupSidebarToggle();
 
-                if (role === ROLES.QC_LEADER || role === ROLES.EXECUTIVE) {
+                if (userRole === ROLES.QC_LEADER || userRole === ROLES.EXECUTIVE) {
                     document.getElementById("newTemplateBtn").classList.remove("hidden");
                 }
 
@@ -310,7 +312,7 @@
                     }
 
                     if (reasons.length > 0) {
-                        rejectionReasonsHTML = `
+                        reasonsHTML = `
                             <div class="mt-3 p-3 bg-red-50/80 border border-red-100 rounded-xl text-[11px] text-red-700 space-y-1">
                                 <p class="font-black uppercase tracking-wider text-[9px] text-red-500 flex items-center gap-1">
                                     <i data-lucide="message-square" size="10"></i> Rejection Feedback:
@@ -319,6 +321,18 @@
                             </div>`;
                     }
                 }
+            }
+
+            // INJECT EDIT BUTTON SYSTEM: Semak kebenaran role menggunakan ROLES object rujukan
+            if (userRole === ROLES.QC_LEADER || userRole === ROLES.EXECUTIVE) {
+                actionButtonHTML = `
+                    <div class="mt-5 flex gap-2">
+                        <button onclick="window.location.href='EditInspection.html?editId=${templateId}'"
+                            class="flex-1 py-3 px-4 bg-purple-600 text-white rounded-xl font-black text-xs uppercase tracking-wider hover:bg-purple-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                            <i data-lucide="edit-3" size="13"></i> Edit Configuration
+                        </button>
+                    </div>
+                `;
             }
 
             return `
