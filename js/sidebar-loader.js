@@ -13,8 +13,8 @@ export async function loadSidebar(sidebarFile) {
         if (!container) return;
         container.innerHTML = html;
         
-        // 2. Logik Highlight Automatik Berpusat
-        const currentPage = window.location.pathname.split("/").pop();
+        // 2. Logik Highlight Automatik Berpusat (Ditukar kepada lowercase untuk elak isu case-sensitivity)
+        const currentPage = window.location.pathname.split("/").pop().toLowerCase();
         const navLinks = container.querySelectorAll('.nav-link');
         
         // Tentukan tema warna berdasarkan jenis fail sidebar
@@ -23,7 +23,9 @@ export async function loadSidebar(sidebarFile) {
         const colorClass = isBlue ? 'blue' : (isAmber ? 'amber' : 'purple');
 
         navLinks.forEach(link => {
-            const targetPath = link.getAttribute('data-path') || link.dataset.path;
+            const rawPath = link.getAttribute('data-path') || link.dataset.path || '';
+            const targetPath = rawPath.toLowerCase(); // Tukar path tujuan ke huruf kecil
+            
             if (currentPage && targetPath && currentPage.includes(targetPath)) {
                 // Buang kelas default
                 link.classList.remove('text-slate-600', 'hover:bg-blue-50', 'hover:bg-purple-50', 'hover:bg-amber-50');

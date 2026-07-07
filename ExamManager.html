@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Exam Manager | QC Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -11,10 +11,11 @@
 
     <div id="main-content" style="display: none;">
         <div class="flex flex-col md:flex-row min-h-screen">
-            <div id="sidebar-container" class="w-full md:w-auto z-50"></div>
+            
+            <div id="sidebar-container" class="w-full md:w-auto md:sticky md:top-0 md:h-screen z-50 shrink-0"></div>
 
             <main class="flex-1 p-4 md:p-8 overflow-y-auto">
-                <header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-5">
+                <header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-5 mt-2 md:mt-0">
                     <div>
                         <p class="text-xs uppercase tracking-[0.15em] text-purple-600 font-black mb-1">Assessment Controls</p>
                         <h1 class="text-3xl font-black tracking-tight">Exam Management Hub</h1>
@@ -48,30 +49,45 @@
 
         const user = JSON.parse(localStorage.getItem("session"));
 
-        // Binds click event triggers for controlling mobile nav toggle actions inside the sidebar markup template
+        // Binds event triggers for controlling mobile navigation drawer via modular elements
         function setupMobileMenuEvents() {
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const closeMenuBtn = document.getElementById('closeMenuBtn');
-            const sidebarMenu = document.getElementById('sidebarMenu');
-            const mobileOverlay = document.getElementById('mobileOverlay');
+            const container = document.getElementById('sidebar-container');
+            
+            // Note: Ensure your loaded sidebar HTML has a button with id="mobileSidebarToggle" for the orange menu to work
+            const toggleBtn = container.querySelector("#mobileSidebarToggle") || document.getElementById("mobileSidebarToggle");
+            const sidebar = container.querySelector("#mainSidebar") || document.getElementById('sidebarMenu') || container.querySelector("aside");
+            const backdrop = container.querySelector("#sidebarBackdrop") || document.getElementById('mobileOverlay') || container.querySelector(".backdrop-blur-sm");
+            
+            if (!toggleBtn || !sidebar || !backdrop) return;
 
-            // If the element handles exist in the template, attach slide out and overlay display toggles
-            if (mobileMenuBtn && sidebarMenu && mobileOverlay) {
-                mobileMenuBtn.addEventListener('click', () => {
-                    sidebarMenu.classList.remove('-translate-x-full');
-                    mobileOverlay.classList.remove('hidden');
-                });
+            function toggleSidebar() {
+                const isOpen = !sidebar.classList.contains("-translate-x-full");
+                if (isOpen) {
+                    sidebar.classList.add("-translate-x-full");
+                    backdrop.classList.add("hidden");
+                    backdrop.classList.remove("opacity-100");
+                    toggleBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
+                } else {
+                    sidebar.classList.remove("-translate-x-full");
+                    backdrop.classList.remove("hidden");
+                    setTimeout(() => backdrop.classList.add("opacity-100"), 10);
+                    toggleBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
+                }
+                if (window.lucide) lucide.createIcons();
             }
 
-            const closeActions = [closeMenuBtn, mobileOverlay];
-            closeActions.forEach(element => {
-                if (element && sidebarMenu && mobileOverlay) {
-                    element.addEventListener('click', () => {
-                        sidebarMenu.classList.add('-translate-x-full');
-                        mobileOverlay.classList.add('hidden');
-                    });
-                }
+            toggleBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggleSidebar();
             });
+            
+            backdrop.addEventListener("click", toggleSidebar);
+
+            // Handle sub-component fallback close trigger buttons if they exist
+            const closeMenuBtn = container.querySelector("#closeMenuBtn") || document.getElementById('closeMenuBtn');
+            if (closeMenuBtn) {
+                closeMenuBtn.addEventListener('click', toggleSidebar);
+            }
         }
 
         // Application main layout initialization pipeline loop
@@ -90,7 +106,7 @@
                 // Swap visual rendering view layers smoothly
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('main-content').style.display = 'block';
-                lucide.createIcons();
+                if (window.lucide) lucide.createIcons();
             } catch (err) {
                 console.error("Exam Manager Loader Error:", err);
                 alert("Failed to securely load assessment configuration profiles.");
@@ -109,7 +125,7 @@
                     <i data-lucide="folder-open" class="mx-auto text-slate-300 mb-3" size="40"></i>
                     <p class="text-sm font-medium text-slate-400 italic">No exams configurations registered inside the collection database yet.</p>
                 `;
-                lucide.createIcons();
+                if (window.lucide) lucide.createIcons();
                 return;
             }
 
@@ -163,7 +179,7 @@
                 `;
             });
 
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
 
         // Global access context mapping for toggling visibility status parameters on template components

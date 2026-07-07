@@ -56,15 +56,15 @@
     </div>
 
     <div class="flex flex-col md:flex-row min-h-screen">
-        <div id="sidebar-container" class="w-full md:w-auto z-50"></div>
+        <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
 
         <main class="flex-1 p-4 md:p-8 overflow-y-auto">
             <header class="mb-8 border-b border-slate-100 pb-5">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex items-center justify-between w-full md:w-auto">
+                    <div class="flex items-center justify-between w-full md:w-auto gap-4">
                         <div>
                             <h1 class="text-3xl md:text-4xl font-black flex items-center gap-3 tracking-tight">
-                                <i data-lucide="file-check" class="text-purple-600"></i> Verification Board
+                                <i data-lucide="file-check" id="headerIcon" class="text-purple-600"></i> Verification Board
                             </h1>
                             <p class="text-slate-500 font-bold text-sm mt-1">Review, crosscheck, and sign off multi-level QA examinations and field inspection audits.</p>
                         </div>
@@ -105,41 +105,61 @@
         ].filter(Boolean);
 
         const roleIndicator = document.getElementById('roleIndicator');
+        const headerIcon = document.getElementById('headerIcon');
+        
         if (isLeader) {
             roleIndicator.className += " bg-purple-50 text-purple-700 border-purple-200";
             roleIndicator.innerText = "Active Role: QC Leader Queue";
+            headerIcon.className = "text-purple-600";
         } else {
             roleIndicator.className += " bg-amber-50 text-amber-700 border-amber-200";
             roleIndicator.innerText = "Active Role: Executive Queue";
+            headerIcon.className = "text-amber-600";
         }
 
         let submissionsMap = { exam: [], inspection: [] };
         let currentFilterType = 'all';
         let activeRejectionTarget = null;
 
-        // Binds event triggers for controlling mobile navigation drawer via the modular side component click target selectors
+        // Binds event triggers for controlling mobile navigation drawer via modular elements
         function setupMobileMenuEvents() {
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const closeMenuBtn = document.getElementById('closeMenuBtn');
-            const sidebarMenu = document.getElementById('sidebarMenu');
-            const mobileOverlay = document.getElementById('mobileOverlay');
+            const container = document.getElementById('sidebar-container');
+            
+            // Checks for trigger target button inside the main layout or within the loaded sidebar component
+            const toggleBtn = document.getElementById("mobileSidebarToggle") || container.querySelector("#mobileSidebarToggle") || container.querySelector("button");
+            const sidebar = container.querySelector("#mainSidebar") || document.getElementById('sidebarMenu');
+            const backdrop = container.querySelector("#sidebarBackdrop") || document.getElementById('mobileOverlay');
+            
+            if (!toggleBtn || !sidebar || !backdrop) return;
 
-            if (mobileMenuBtn && sidebarMenu && mobileOverlay) {
-                mobileMenuBtn.addEventListener('click', () => {
-                    sidebarMenu.classList.remove('-translate-x-full');
-                    mobileOverlay.classList.remove('hidden');
-                });
+            function toggleSidebar() {
+                const isOpen = !sidebar.classList.contains("-translate-x-full");
+                if (isOpen) {
+                    sidebar.classList.add("-translate-x-full");
+                    backdrop.classList.add("hidden");
+                    backdrop.classList.remove("opacity-100");
+                    toggleBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
+                } else {
+                    sidebar.classList.remove("-translate-x-full");
+                    backdrop.classList.remove("hidden");
+                    setTimeout(() => backdrop.classList.add("opacity-100"), 10);
+                    toggleBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
+                }
+                if (window.lucide) lucide.createIcons();
             }
 
-            const closeActions = [closeMenuBtn, mobileOverlay];
-            closeActions.forEach(element => {
-                if (element && sidebarMenu && mobileOverlay) {
-                    element.addEventListener('click', () => {
-                        sidebarMenu.classList.add('-translate-x-full');
-                        mobileOverlay.classList.add('hidden');
-                    });
-                }
+            toggleBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggleSidebar();
             });
+            
+            backdrop.addEventListener("click", toggleSidebar);
+
+            // Handle sub component fallback close trigger buttons if they exist
+            const closeMenuBtn = container.querySelector("#closeMenuBtn") || document.getElementById('closeMenuBtn');
+            if (closeMenuBtn) {
+                closeMenuBtn.addEventListener('click', toggleSidebar);
+            }
         }
 
         window.checkPin = () => {
@@ -185,7 +205,6 @@
             }
         });
 
-        // Pipeline system matching approval state status transitions accurately
         async function executeStatusUpdate(subId, targetStatus, reason = "", isInspection) {
             try {
                 const colName = isInspection ? "inspection_submissions" : "exam_submissions";
@@ -198,7 +217,6 @@
                         reason: reason,
                         processedAt: new Date()
                     };
-                    // Multi-staged logic workflow configuration
                     updatePayload.status = (targetStatus === 'Approved') ? "pending_exec" : "Rejected";
                 } else {
                     updatePayload.executiveApproval = {
@@ -207,7 +225,6 @@
                         reason: reason,
                         processedAt: new Date()
                     };
-                    // Executive sign-off routes cleanly straight into fully Approved state status flag
                     updatePayload.status = (targetStatus === 'Approved') ? "Approved" : "Rejected";
                 }
 
@@ -372,7 +389,7 @@
             } catch (e) {
                 console.warn("Sidebar interface build bypassed:", e);
             }
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
 
         initApp();

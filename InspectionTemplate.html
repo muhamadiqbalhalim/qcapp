@@ -11,7 +11,7 @@
 
     <div id="main-content" style="display: none;">
         <div class="flex flex-col md:flex-row min-h-screen">
-            <div id="sidebar-container" class="w-full md:w-auto z-50"></div>
+            <div id="sidebar-container" class="w-full md:w-auto md:sticky md:top-0 md:h-screen z-50 shrink-0"></div>
 
             <main class="flex-1 p-4 md:p-8 overflow-y-auto">
                 <header class="mb-8 border-b border-slate-100 pb-5">
@@ -120,29 +120,45 @@
         const storage = getStorage();
         const sessionData = JSON.parse(localStorage.getItem("session"));
 
-        // Binds click event triggers for controlling mobile nav toggle actions inside the loaded sidebar markup template
-        function setupMobileMenuEvents() {
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const closeMenuBtn = document.getElementById('closeMenuBtn');
-            const sidebarMenu = document.getElementById('sidebarMenu');
-            const mobileOverlay = document.getElementById('mobileOverlay');
+        // Unified System Sidebar Drawer Interaction Engine
+        function setupSidebarToggle() {
+            const container = document.getElementById('sidebar-container');
+            
+            const toggleBtn = container.querySelector("#mobileSidebarToggle") || document.getElementById("mobileSidebarToggle") || document.getElementById('mobileMenuBtn');
+            const sidebar = container.querySelector("#mainSidebar") || document.getElementById('sidebarMenu') || container.querySelector("aside");
+            const backdrop = container.querySelector("#sidebarBackdrop") || document.getElementById('mobileOverlay') || container.querySelector(".backdrop-blur-sm");
+            
+            if (!toggleBtn || !sidebar || !backdrop) return;
 
-            if (mobileMenuBtn && sidebarMenu && mobileOverlay) {
-                mobileMenuBtn.addEventListener('click', () => {
-                    sidebarMenu.classList.remove('-translate-x-full');
-                    mobileOverlay.classList.remove('hidden');
-                });
+            function toggleSidebar() {
+                const isOpen = !sidebar.classList.contains("-translate-x-full");
+                if (isOpen) {
+                    sidebar.classList.add("-translate-x-full");
+                    backdrop.classList.add("hidden");
+                    backdrop.classList.remove("opacity-100");
+                    toggleBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
+                    document.body.style.overflow = ''; 
+                } else {
+                    sidebar.classList.remove("-translate-x-full");
+                    backdrop.classList.remove("hidden");
+                    setTimeout(() => backdrop.classList.add("opacity-100"), 10);
+                    toggleBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
+                    document.body.style.overflow = 'hidden'; 
+                }
+                if (window.lucide) lucide.createIcons();
             }
 
-            const closeActions = [closeMenuBtn, mobileOverlay];
-            closeActions.forEach(element => {
-                if (element && sidebarMenu && mobileOverlay) {
-                    element.addEventListener('click', () => {
-                        sidebarMenu.classList.add('-translate-x-full');
-                        mobileOverlay.classList.add('hidden');
-                    });
-                }
+            toggleBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggleSidebar();
             });
+            
+            backdrop.addEventListener("click", toggleSidebar);
+
+            const closeMenuBtn = container.querySelector("#closeMenuBtn") || document.getElementById('closeMenuBtn');
+            if (closeMenuBtn) {
+                closeMenuBtn.addEventListener('click', toggleSidebar);
+            }
         }
 
         async function initPage() {
@@ -150,8 +166,8 @@
                 const targetSidebar = sessionData.role === ROLES.EXECUTIVE ? 'SidebarExecutive.html' : 'SidebarLeader.html';
                 await loadSidebar(targetSidebar);
 
-                // Initialize menu click handlers immediately following sidebar compilation
-                setupMobileMenuEvents();
+                // Initialize standard sidebar toggle actions immediately post dynamic injection
+                setupSidebarToggle();
 
                 // Add default initialization rows context layout
                 addRow('rowsLH');

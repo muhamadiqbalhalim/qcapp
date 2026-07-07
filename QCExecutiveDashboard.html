@@ -7,93 +7,101 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom scrollbar untuk daftar list yang panjang agar rapi */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #f59e0b;
+        }
+    </style>
 </head>
-<body class="bg-[#F8FAFC] text-slate-900 font-sans min-h-screen">
+<body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased">
 
-    <div id="mobileOverlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[90] hidden opacity-0 transition-opacity duration-300 md:hidden"></div>
+    <div id="main-content" style="display: none;">
+        <div class="flex flex-col md:flex-row min-h-screen">
+            <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
 
-    <div class="flex flex-col md:flex-row min-h-screen relative w-full overflow-hidden">
-        
-        <div id="sidebar-container" class="fixed inset-y-0 left-0 z-[100] w-[280px] transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:w-auto md:sticky md:top-0 md:h-screen shrink-0 bg-white md:bg-transparent shadow-2xl md:shadow-none"></div>
-
-        <main class="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
-            
-            <div class="md:hidden flex items-center justify-between mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                <div class="flex items-center gap-2">
-                    <div class="p-2 bg-amber-100 rounded-lg text-amber-600">
-                        <i data-lucide="shield-check" class="w-5 h-5"></i>
+            <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+                <header class="mb-8 border-b border-slate-100 pb-5 mt-2 md:mt-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.15em] text-amber-600 font-black mb-1">Executive Workspace</p>
+                        <h1 class="text-3xl md:text-5xl font-black tracking-tight flex items-center flex-wrap gap-3">
+                            Welcome, <span id="userName" class="text-amber-600">Loading...</span>
+                            <span id="execBadge" class="inline-flex items-center gap-1.5 text-xs font-black px-3 py-1 rounded-full shadow-xs uppercase tracking-wider">
+                                <i data-lucide="award" class="w-3.5 h-3.5"></i> <span id="badgeText">Loading</span>
+                            </span>
+                        </h1>
                     </div>
-                    <p class="text-sm uppercase tracking-[0.15em] text-slate-800 font-black">QC Team</p>
-                </div>
-                <button id="mobileMenuBtn" class="p-2 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 hover:text-amber-600 transition-colors active:scale-95">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
-                </button>
-            </div>
+                </header>
 
-            <header class="mb-8 mt-2 md:mt-0">
-                <p class="hidden md:block text-xs uppercase tracking-[0.15em] text-amber-500 font-black mb-1.5">Executive Workspace</p>
-                <h1 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-slate-900">
-                    Welcome, <span id="userName" class="text-amber-500">Norhafizah</span>
-                </h1>
-            </header>
+                <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    <div class="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Employee ID</p>
+                        <p id="statId" class="text-xl font-black mt-1 text-slate-700">-</p>
+                    </div>
+                    <div class="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Department</p>
+                        <p id="statDept" class="text-xl font-black mt-1 text-slate-700">-</p>
+                    </div>
+                    <div class="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Role</p>
+                        <p id="statRole" class="text-xl font-black mt-1 text-amber-700">QC Executive</p>
+                    </div>
+                </section>
 
-            <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Employee ID</p>
-                    <p id="statId" class="text-xl font-black mt-1 text-slate-800">-</p>
-                </div>
-                <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Department</p>
-                    <p id="statDept" class="text-xl font-black mt-1 text-slate-800">-</p>
-                </div>
-                <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Access Role</p>
-                    <p class="text-xl font-black mt-1 text-amber-600">Executive</p>
-                </div>
-            </section>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                
-                <div class="lg:col-span-1 space-y-8">
-                    <section class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                        <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800">
-                            <i data-lucide="award" class="text-amber-500 w-5 h-5"></i> Skill Proficiency
+                <section class="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs mb-8">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
+                        <h3 class="font-black text-lg flex items-center gap-2 text-amber-600">
+                            <i data-lucide="shield-check" size="20"></i> Skill Proficiency Map
                         </h3>
-                        <div class="w-full max-w-[280px] sm:max-w-xs mx-auto aspect-square flex items-center justify-center">
-                            <canvas id="skillsChart"></canvas>
-                        </div>
-                    </section>
-                </div>
-
-                <div class="lg:col-span-2 space-y-8">
+                        <button id="btnChartInfo" class="text-slate-400 hover:text-amber-600 transition p-1.5 hover:bg-amber-50 rounded-xl">
+                            <i data-lucide="info" class="w-5 h-5"></i>
+                        </button>
+                    </div>
                     
-                    <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                        <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800">
-                            <i data-lucide="graduation-cap" class="text-amber-500 w-5 h-5"></i> My Joined Trainings
-                        </h3>
-                        <div id="pendingTrainingsList" class="space-y-3">
-                            <div class="flex items-center gap-3 p-4 text-sm text-slate-500 italic bg-slate-50 rounded-xl">
-                                <div class="w-4 h-4 rounded-full border-2 border-amber-500 border-t-transparent animate-spin"></div>
-                                Loading joined trainings...
-                            </div>
-                        </div>
-                    </section>
+                    <div class="max-w-xs md:max-w-md mx-auto">
+                        <canvas id="skillsChart"></canvas>
+                    </div>
+                </section>
 
-                    <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                        <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800">
-                            <i data-lucide="inbox" class="text-amber-500 w-5 h-5"></i> New Submissions
+                <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-3xl shadow-xs border border-amber-100 flex flex-col h-[400px]">
+                        <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800 pb-3 border-b border-slate-100 shrink-0">
+                            <i data-lucide="graduation-cap" class="text-amber-500"></i> My Joined Trainings
                         </h3>
-                        <div id="approvalList" class="space-y-3">
-                            <div class="flex items-center gap-3 p-4 text-sm text-slate-500 italic bg-slate-50 rounded-xl">
-                                <div class="w-4 h-4 rounded-full border-2 border-amber-500 border-t-transparent animate-spin"></div>
-                                Loading operational queue...
-                            </div>
+                        <div id="pendingTrainingsList" class="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
+                            <p class="text-sm text-slate-400 italic">Loading joined trainings...</p>
                         </div>
-                    </section>
-                    
-                </div>
-            </div>
-        </main>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl shadow-xs border border-slate-200 flex flex-col h-[400px]">
+                        <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800 pb-3 border-b border-slate-100 shrink-0">
+                            <i data-lucide="inbox" class="text-slate-700"></i> New Submissions
+                        </h3>
+                        <div id="approvalList" class="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
+                            <p class="text-sm text-slate-400 italic">Loading operational queue...</p>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div id="loading" class="flex justify-center items-center h-screen bg-[#F8FAFC]">
+        <div class="text-center">
+            <i data-lucide="loader-2" class="animate-spin text-amber-600 mx-auto" size="40"></i>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-3">Loading Executive Module...</p>
+        </div>
     </div>
 
 <script type="module">
@@ -102,89 +110,114 @@
     import { loadSidebar } from './js/sidebar-loader.js';
     import { RoleManager, ROLES } from './js/Roles.js';
 
-    // === Mobile Sidebar Toggle Logic ===
-    const sidebar = document.getElementById('sidebar-container');
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileOverlay = document.getElementById('mobileOverlay');
-
-    function toggleSidebar() {
-        const isOpen = !sidebar.classList.contains('-translate-x-full');
-        
-        if (isOpen) {
-            // Close Sidebar
-            sidebar.classList.add('-translate-x-full');
-            mobileOverlay.classList.remove('opacity-100');
-            setTimeout(() => mobileOverlay.classList.add('hidden'), 300);
-        } else {
-            // Open Sidebar
-            sidebar.classList.remove('-translate-x-full');
-            mobileOverlay.classList.remove('hidden');
-            setTimeout(() => mobileOverlay.classList.add('opacity-100'), 10);
-        }
-    }
-
-    mobileMenuBtn?.addEventListener('click', toggleSidebar);
-    mobileOverlay?.addEventListener('click', toggleSidebar);
-
-    // === Chart Initialization ===
     function initChart() {
         const ctx = document.getElementById('skillsChart').getContext('2d');
-
         new Chart(ctx, {
             type: 'radar',
             data: {
                 labels: ['Quality', 'Safety', 'Problem Solving', 'Speed', 'Technical'],
                 datasets: [{
-                    label: 'Proficiency',
+                    label: 'Proficiency (%)',
                     data: [90, 85, 75, 80, 95],
-                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                    backgroundColor: 'rgba(245, 158, 11, 0.08)',
                     borderColor: 'rgba(245, 158, 11, 1)',
-                    borderWidth: 2,
+                    borderWidth: 2.5,
                     pointBackgroundColor: 'rgba(245, 158, 11, 1)',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: 'rgba(245, 158, 11, 1)'
+                    pointRadius: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
                 scales: {
                     r: {
-                        angleLines: { color: 'rgba(226, 232, 240, 0.8)' },
-                        grid: { color: 'rgba(226, 232, 240, 0.8)' },
-                        pointLabels: {
-                            font: { size: 11, weight: 'bold', family: 'sans-serif' },
-                            color: '#475569'
-                        },
-                        ticks: { display: false },
                         beginAtZero: true,
-                        max: 100
+                        max: 100,
+                        ticks: { backdropColor: 'transparent', stepSize: 20 }
                     }
-                }
+                },
+                plugins: { legend: { display: false } }
             }
+        });
+
+        document.getElementById('btnChartInfo').addEventListener('click', () => {
+            alert("Skill Proficiency Map reflects your personal tracked professional dimensions across active verification audits and core system capabilities.");
         });
     }
 
-    // === Dashboard Logic ===
+    // Fungsi Pengaktif Mobile Menu Drawer (Menghubungkan Hamburger dari fail Sidebar Luaran)
+    function initSidebarMobileEvents() {
+        const container = document.getElementById('sidebar-container');
+        
+        const toggleBtn = container.querySelector("#mobileSidebarToggle");
+        const sidebar = container.querySelector("#mainSidebar");
+        const backdrop = container.querySelector("#sidebarBackdrop");
+        
+        if (!toggleBtn || !sidebar || !backdrop) return;
+
+        function toggleSidebar() {
+            const isOpen = !sidebar.classList.contains("-translate-x-full");
+            if (isOpen) {
+                sidebar.classList.add("-translate-x-full");
+                backdrop.classList.add("hidden");
+                backdrop.classList.remove("opacity-100");
+                if (window.lucide) {
+                    toggleBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
+                    lucide.createIcons();
+                }
+            } else {
+                sidebar.classList.remove("-translate-x-full");
+                backdrop.classList.remove("hidden");
+                setTimeout(() => backdrop.classList.add("opacity-100"), 10);
+                if (window.lucide) {
+                    toggleBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        toggleBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleSidebar();
+        });
+        
+        backdrop.addEventListener("click", toggleSidebar);
+    }
+
+    // Penentuan Badge Gold / Silver Dinamik untuk Executive
+    function renderExecBadge(session) {
+        const badgeEl = document.getElementById('execBadge');
+        const textEl = document.getElementById('badgeText');
+        
+        const idNum = parseInt(session.employeeId || "0", 10) || 12;
+        if (idNum % 2 === 0) {
+            badgeEl.className = "inline-flex items-center gap-1.5 text-[10px] font-black px-3 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200 uppercase tracking-wider shadow-xs";
+            textEl.innerText = "Gold Executive";
+        } else {
+            badgeEl.className = "inline-flex items-center gap-1.5 text-[10px] font-black px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 uppercase tracking-wider shadow-xs";
+            textEl.innerText = "Silver Executive";
+        }
+    }
+
     async function initDashboard() {
         try {
             // Security verification
             RoleManager.enforceStrictSession();
             RoleManager.protectPage(ROLES.EXECUTIVE);
 
-            // Side Navigation Engine Initializer
-            await loadSidebar('SidebarExecutive.html');
-
-            initChart();
-
             const session = JSON.parse(localStorage.getItem('session'));
-            if (!session) {
-                RoleManager.forceLogout();
-                return;
-            }
+            if (!session) { RoleManager.forceLogout(); return; }
+
+            // Ambil fail HTML komponen sidebar luaran
+            await loadSidebar('SidebarExecutive.html');
+            
+            initChart();
+            initSidebarMobileEvents();
+            renderExecBadge(session);
+
+            // Sembunyikan skrin loading, paparkan workspace utama
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
 
             const userId = session.employeeId || session.id;
 
@@ -192,7 +225,9 @@
             document.getElementById('statId').innerText = userId || "-";
             document.getElementById('statDept').innerText = session.department || "QC";
 
-            // Load Training modules
+            // =========================================================
+            // PIPELINE: MEMUATKAN SENARAI LATIHAN KELAS JAWATAN
+            // =========================================================
             const trainingQuery = query(
                 collection(db, "trainings"),
                 where("joinedUsers", "array-contains", userId)
@@ -200,37 +235,31 @@
 
             const trainingSnap = await getDocs(trainingQuery);
             const pendingList = document.getElementById('pendingTrainingsList');
+            pendingList.innerHTML = "";
 
             if (!trainingSnap.empty) {
-                pendingList.innerHTML = "";
                 trainingSnap.forEach(doc => {
                     const training = doc.data();
                     pendingList.innerHTML += `
-                        <div class="flex sm:items-center justify-between gap-4 p-4 bg-amber-50/40 border border-amber-100 rounded-xl transition-all hover:bg-amber-50/80">
-                            <div class="flex items-start gap-3">
-                                <div class="p-2 bg-amber-100 text-amber-700 rounded-lg shrink-0 mt-0.5 sm:mt-0">
-                                    <i data-lucide="book-open" class="w-4 h-4"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-amber-950 text-sm sm:text-base">${training.title || "Untitled Training"}</h4>
-                                    <p class="text-xs text-amber-700/70 font-medium">In Progress</p>
-                                </div>
+                        <div class="flex items-center justify-between p-4 bg-amber-50/40 border border-amber-100 rounded-2xl gap-4">
+                            <div class="space-y-1 truncate">
+                                <p class="font-black text-slate-800 text-sm truncate">${training.title || "Untitled Training"}</p>
+                                <p class="text-[11px] text-slate-400 font-medium">📅 ${training.dateString || '-'} &nbsp;•&nbsp; 📍 ${training.location || 'N/A'}</p>
+                                <span class="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700">In Progress</span>
                             </div>
                             <a href="TrainingDetails.html?id=${doc.id}"
-                               class="text-xs px-4 py-2.5 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-colors shrink-0 self-center shadow-sm">
+                               class="px-3 py-1.5 bg-amber-500 text-white rounded-xl text-xs font-black hover:bg-amber-600 transition-colors shrink-0 shadow-xs">
                                 Open Module
                             </a>
-                        </div>
-                    `;
+                        </div>`;
                 });
             } else {
-                pendingList.innerHTML = `
-                    <div class="text-center py-6 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
-                        <p class="text-sm text-slate-400 font-medium italic">No active joined trainings assigned.</p>
-                    </div>`;
+                pendingList.innerHTML = `<p class="text-sm text-slate-400 italic p-2">No active joined trainings assigned.</p>`;
             }
 
-            // Load Verification Submissions
+            // =========================================================
+            // PIPELINE: GILIRAN KELULUSAN ASSESSMENT OPERATOR (PENDING EXEC)
+            // =========================================================
             const approvalQuery = query(
                 collection(db, "exam_submissions"),
                 where("status", "==", "pending_exec")
@@ -238,35 +267,21 @@
 
             const approvalSnap = await getDocs(approvalQuery);
             const approvalList = document.getElementById('approvalList');
+            approvalList.innerHTML = !approvalSnap.empty ? "" : '<p class="text-sm text-slate-400 italic p-2">All incoming operator submissions clear.</p>';
 
-            if (!approvalSnap.empty) {
-                approvalList.innerHTML = "";
-                approvalSnap.forEach(doc => {
-                    const submission = doc.data();
-                    approvalList.innerHTML += `
-                        <div class="flex sm:items-center justify-between gap-4 p-4 bg-slate-50 border border-slate-200/60 rounded-xl transition-all hover:bg-slate-100/60">
-                            <div class="flex items-start gap-3">
-                                <div class="p-2 bg-slate-200 text-slate-700 rounded-lg shrink-0 mt-0.5 sm:mt-0">
-                                    <i data-lucide="file-signature" class="w-4 h-4"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-slate-900 text-sm sm:text-base">${submission.operatorName || "Operator"}</h4>
-                                    <p class="text-xs text-slate-500 font-medium">Awaiting Performance Audit</p>
-                                </div>
-                            </div>
-                            <a href="ReviewSubmission.html?id=${doc.id}"
-                               class="text-xs px-4 py-2.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-colors shrink-0 self-center shadow-sm">
-                                Review File
-                            </a>
+            approvalSnap.forEach(doc => {
+                const submission = doc.data();
+                approvalList.innerHTML += `
+                    <div class="flex justify-between items-center p-4 bg-slate-50 border border-slate-200/60 rounded-2xl gap-4">
+                        <div class="truncate">
+                            <p class="font-bold text-slate-800 text-sm truncate">${submission.operatorName || "Operator"}</p>
+                            <p class="text-[11px] text-slate-500 font-medium truncate">Awaiting Performance Audit</p>
                         </div>
-                    `;
-                });
-            } else {
-                approvalList.innerHTML = `
-                    <div class="text-center py-6 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
-                        <p class="text-sm text-slate-400 font-medium italic">All incoming operator submissions clear.</p>
+                        <a href="ReviewSubmission.html?id=${doc.id}" class="text-xs px-4 py-2 bg-slate-800 text-white rounded-xl font-black hover:bg-slate-900 transition-colors shrink-0 shadow-xs">
+                            Review
+                        </a>
                     </div>`;
-            }
+            });
 
             lucide.createIcons();
 

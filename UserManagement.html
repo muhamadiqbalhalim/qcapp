@@ -7,23 +7,40 @@
     <title>QC Team | User Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom scrollbar matching the dashboard design specifications */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
 </head>
 
 <body class="bg-slate-100 antialiased text-slate-800">
 
-<div class="min-h-screen flex flex-col md:flex-row">
+<div class="min-h-screen flex flex-col md:flex-row w-full">
 
-    <aside id="sidebar" class="w-full md:w-64 md:fixed md:inset-y-0 md:left-0 md:z-20 bg-white border-b md:border-b-0 md:border-r border-slate-200 overflow-y-auto shrink-0">
-        </aside>
+    <div id="sidebar-container" class="w-full md:w-auto md:sticky md:top-0 md:h-screen z-50 shrink-0"></div>
 
-    <div class="flex-1 md:pl-64 flex flex-col min-w-0">
+    <div class="flex-1 flex flex-col min-w-0">
         
-        <main class="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto">
+        <main class="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto overflow-y-auto">
 
-            <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-2 md:mt-0">
                 <div>
-                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                        User Management & Performance Hub
+                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                        <i data-lucide="users-round" class="text-blue-600"></i> User Management & Performance Hub
                     </h1>
                     <p class="text-slate-500 mt-1 text-sm sm:text-base">
                         Manage QC user permissions, view aggregated historical exam scores, and monitor dynamic operator proficiency rankings.
@@ -69,7 +86,7 @@
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="overflow-x-auto w-full">
+                <div class="overflow-x-auto w-full custom-scrollbar pb-2">
                     <table class="min-w-full divide-y divide-slate-100 whitespace-nowrap">
                         <thead class="bg-slate-50 border-b">
                             <tr class="text-slate-500 text-xs font-bold uppercase tracking-wider">
@@ -97,7 +114,9 @@
 
             <div id="userModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
                 <div class="bg-white rounded-2xl w-full max-w-md p-6 sm:p-8 shadow-xl">
-                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 mb-6">Manage User Access</h2>
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-6 h-6 text-blue-600"></i> Manage Access
+                    </h2>
                     <input type="hidden" id="selectedUserId">
 
                     <div class="space-y-5">
@@ -124,8 +143,8 @@
                         <button id="closeModal" class="px-5 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
                             Cancel
                         </button>
-                        <button id="saveUser" class="px-5 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-all shadow-sm">
-                            Save Changes
+                        <button id="saveUser" class="px-5 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-all shadow-sm flex items-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i> Save
                         </button>
                     </div>
                 </div>
@@ -138,6 +157,7 @@
 <script type="module">
 import { db } from "./js/FirebaseConfig.js";
 import { RoleManager, ROLES } from "./js/Roles.js";
+import { loadSidebar } from "./js/sidebar-loader.js"; // <-- Guna loader berpusat yang baru
 import {
     collection,
     getDocs,
@@ -150,21 +170,60 @@ import {
 
 // Security enforcement
 RoleManager.enforceStrictSession();
-RoleManager.protectPage(ROLES.EXECUTIVE);
+RoleManager.protectPage(ROLES.EXECUTIVE, ROLES.QC_LEADER);
 
-// Load Sidebar
-fetch("SidebarExecutive.html")
-    .then(res => res.text())
-    .then(html => {
-        document.getElementById("sidebar").innerHTML = html;
-        lucide.createIcons();
-        const logoutBtn = document.getElementById("logoutBtn");
-        if (logoutBtn) {
-            logoutBtn.addEventListener("click", () => {
-                RoleManager.forceLogout();
-            });
+// Sidebar Load Logic
+const session = JSON.parse(localStorage.getItem("session"));
+let currentRole = session?.role || "EXECUTIVE";
+let sidebarFile = currentRole.includes("LEADER") ? "SidebarLeader.html" : "SidebarExecutive.html";
+
+// Setup mobile sidebar interaction engine exactly like dashboards
+function setupMobileMenuEvents() {
+    const container = document.getElementById('sidebar-container');
+    
+    const toggleBtn = container.querySelector("#mobileSidebarToggle") || container.querySelector("#mobileMenuBtn") || container.querySelector("button");
+    const sidebar = container.querySelector("#mainSidebar") || container.querySelector("#sidebarMenu") || container.querySelector("aside");
+    const backdrop = container.querySelector("#sidebarBackdrop") || container.querySelector("#mobileOverlay") || container.querySelector(".backdrop-blur-sm");
+    
+    if (!toggleBtn || !sidebar || !backdrop) return;
+
+    function toggleSidebar() {
+        const isOpen = !sidebar.classList.contains("-translate-x-full");
+        if (isOpen) {
+            sidebar.classList.add("-translate-x-full");
+            backdrop.classList.add("hidden");
+            backdrop.classList.remove("opacity-100");
+            toggleBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
+        } else {
+            sidebar.classList.remove("-translate-x-full");
+            backdrop.classList.remove("hidden");
+            setTimeout(() => backdrop.classList.add("opacity-100"), 10);
+            toggleBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
         }
+        if (window.lucide) lucide.createIcons();
+    }
+
+    toggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleSidebar();
     });
+    
+    backdrop.addEventListener("click", toggleSidebar);
+
+    const closeBtn = container.querySelector("#closeMenuBtn") || container.querySelector("#closeSidebar");
+    if (closeBtn) {
+        closeBtn.addEventListener('click', toggleSidebar);
+    }
+}
+
+// Gunakan centralized loader supaya logik highlighters berjalan serentak
+try {
+    await loadSidebar(sidebarFile);
+    setupMobileMenuEvents(); // Aktifkan hamburger klik selepas inject selesai
+} catch (err) {
+    console.error("Gagal memuatkan sidebar:", err);
+    document.getElementById("sidebar-container").innerHTML = `<div class="p-6 text-red-500 font-bold">Failed to load navigation pane.</div>`;
+}
 
 // DOM Elements
 const table = document.getElementById("userTable");
@@ -177,7 +236,6 @@ const statusFilter = document.getElementById("statusFilter");
 
 let users = [];
 
-// Load users + Compile aggregated enterprise analytics safely across multiple future data logs
 async function loadUsers(){
     table.innerHTML = `
         <tr>
@@ -186,7 +244,6 @@ async function loadUsers(){
     `;
 
     try {
-        // Fetch users mapping
         const snapshot = await getDocs(collection(db, "users"));
         const rawUsers = [];
         snapshot.forEach(docSnap => {
@@ -196,13 +253,11 @@ async function loadUsers(){
             }
         });
 
-        // Pull full analytics histories asynchronously (Scales dynamically regardless of how many exams/inspections exist)
         const [examSnap, inspSnap] = await Promise.all([
             getDocs(collection(db, "exam_results")),
             getDocs(collection(db, "inspection_logs"))
         ]);
 
-        // Map multiple exam papers and future modules to dynamic historical lists
         const examMap = {};
         examSnap.forEach(d => {
             const res = d.data();
@@ -211,7 +266,6 @@ async function loadUsers(){
             examMap[opId].push(res.score || 0);
         });
 
-        // Map multiple inspection logs data entries across time
         const logMap = {};
         inspSnap.forEach(d => {
             const log = d.data();
@@ -220,17 +274,13 @@ async function loadUsers(){
             logMap[opId].push(log);
         });
 
-        // Process loop matrix for each user profiles 
         users = rawUsers.map(user => {
             const opId = String(user.employeeId || '');
-            
-            // 1. Calculate historical dynamic average of ALL current and future exams combined
             const scores = examMap[opId] || [];
             const avgExam = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
 
-            // 2. Aggregate parameters from all past inspection sheets
             const logs = logMap[opId] || [];
-            let defectAcc = 50, cycleTime = 50, sequenceAdd = 50; // Standard compliance industrial benchmark baseline values
+            let defectAcc = 50, cycleTime = 50, sequenceAdd = 50; 
             
             if (logs.length > 0) {
                 defectAcc = Math.round(logs.reduce((sum, l) => sum + (l.defectDetectionRate || 0), 0) / logs.length);
@@ -241,7 +291,6 @@ async function loadUsers(){
             const currentQuizComponent = avgExam !== null ? avgExam : 50;
             const skillsAvg = Math.round((defectAcc + cycleTime + sequenceAdd + currentQuizComponent) / 4);
 
-            // 3. Match Composite score index to enterprise qualification tiers
             let badgeName = "Bronze Apprentice";
             let badgeStyle = "bg-orange-50 text-orange-700 border-orange-200";
             
@@ -271,7 +320,6 @@ async function loadUsers(){
 
 loadUsers();
 
-// Render UI Table Row Modules
 function renderTable(data){
     table.innerHTML = "";
 
@@ -297,10 +345,7 @@ function renderTable(data){
                     <div class="text-xs text-slate-400 tracking-wide uppercase">${user.department ?? "-"}</div>
                 </td>
                 <td class="p-4 text-slate-600 font-medium">${user.qcRole ?? "-"}</td>
-                
-                <td class="p-4">
-                    <span class="font-bold text-slate-700">${user.avgExam}</span>
-                </td>
+                <td class="p-4"><span class="font-bold text-slate-700">${user.avgExam}</span></td>
                 <td class="p-4">
                     <div class="flex items-center gap-2">
                         <div class="w-16 bg-slate-200 rounded-full h-2 overflow-hidden hidden sm:block">
@@ -310,11 +355,8 @@ function renderTable(data){
                     </div>
                 </td>
                 <td class="p-4">
-                    <span class="px-2.5 py-1 rounded-full text-xs font-black border ${user.badgeStyle}">
-                        🏅 ${user.badgeName}
-                    </span>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-black border ${user.badgeStyle}">🏅 ${user.badgeName}</span>
                 </td>
-
                 <td class="p-4">
                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold tracking-wide
                         ${user.qcStatus === "ACTIVE" ? "bg-green-100 text-green-700" : 
@@ -331,9 +373,10 @@ function renderTable(data){
             </tr>
         `;
     });
+    
+    if (window.lucide) lucide.createIcons();
 }
 
-// Global Summary Counter Counterparts
 function updateSummary(data){
     totalUsers.innerText = data.length;
     activeUsers.innerText = data.filter(x => x.qcStatus === "ACTIVE").length;
@@ -341,7 +384,6 @@ function updateSummary(data){
     disabledUsers.innerText = data.filter(x => x.qcStatus === "DISABLED").length;
 }
 
-// Execution triggers
 searchInput.addEventListener("input", filterUsers);
 statusFilter.addEventListener("change", filterUsers);
 
@@ -356,9 +398,7 @@ function filterUsers(){
             (user.badgeName ?? "").toLowerCase().includes(keyword) ||
             (user.department ?? "").toLowerCase().includes(keyword);
 
-        const matchStatus = 
-            status === "ALL" || 
-            (user.qcStatus ?? "PENDING") === status;
+        const matchStatus = status === "ALL" || (user.qcStatus ?? "PENDING") === status;
 
         return matchKeyword && matchStatus;
     });
@@ -366,7 +406,6 @@ function filterUsers(){
     renderTable(filtered);
 }
 
-// Modal Toggle Mechanics
 const modal = document.getElementById("userModal");
 const selectedUserId = document.getElementById("selectedUserId");
 const roleSelect = document.getElementById("roleSelect");
@@ -395,7 +434,8 @@ closeModal.onclick = () => {
 
 saveUser.onclick = async () => {
     saveUser.disabled = true;
-    saveUser.innerText = "Saving Profiles...";
+    saveUser.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i> Saving...';
+    if (window.lucide) lucide.createIcons();
 
     try {
         await updateDoc(doc(db, "users", selectedUserId.value), {
@@ -413,11 +453,11 @@ saveUser.onclick = async () => {
         showToast("Database mutation request rejected.", true);
     } finally {
         saveUser.disabled = false;
-        saveUser.innerText = "Save Changes";
+        saveUser.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Save Changes';
+        if (window.lucide) lucide.createIcons();
     }
 };
 
-// Toast module notification framework
 function showToast(message, danger = false){
     const toast = document.createElement("div");
     toast.className = `fixed top-6 right-6 px-6 py-4 rounded-2xl shadow-xl text-white z-50 text-sm font-semibold tracking-wide transition-all

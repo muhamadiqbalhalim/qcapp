@@ -12,7 +12,7 @@
 <body class="bg-[#F8FAFC] text-slate-900 font-sans">
 
     <div class="flex flex-col md:flex-row min-h-screen">
-        <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+        <div id="sidebar-container" class="w-full md:w-auto md:sticky md:top-0 md:h-screen z-50 shrink-0"></div>
 
         <main class="flex-1 p-4 md:p-8 overflow-y-auto">
             <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -61,7 +61,7 @@
 
                 await loadSidebar(sidebar);
 
-                // AKTIFKAN FIX: Pasang kawalan pemicu menu sisi untuk peranti mobile
+                // Initialize menu click event configurations immediately after the sidebar finishes injection
                 setupSidebarToggle();
 
                 if (role === ROLES.QC_LEADER || role === ROLES.EXECUTIVE) {
@@ -75,32 +75,47 @@
             }
         }
 
-        // Fungsi Global Event Delegation untuk kawalan buka/tutup menu sisi pada Mobile
+        // Standardized Mobile Menu Toggle (Matches Exam Manager exactly)
         function setupSidebarToggle() {
-            document.addEventListener('click', (e) => {
-                const toggleBtn = e.target.closest('#mobileMenuBtn');
-                const closeBtn = e.target.closest('#closeMenuBtn');
-                const overlay = e.target.closest('#mobileOverlay');
+            const container = document.getElementById('sidebar-container');
+            
+            // Includes fallback checks for different possible IDs in your loaded HTML
+            const toggleBtn = container.querySelector("#mobileSidebarToggle") || document.getElementById("mobileSidebarToggle") || document.getElementById('mobileMenuBtn');
+            const sidebar = container.querySelector("#mainSidebar") || document.getElementById('sidebarMenu') || container.querySelector("aside");
+            const backdrop = container.querySelector("#sidebarBackdrop") || document.getElementById('mobileOverlay') || container.querySelector(".backdrop-blur-sm");
+            
+            if (!toggleBtn || !sidebar || !backdrop) return;
 
-                const sidebarMenu = document.getElementById('sidebarMenu');
-                const mobileOverlay = document.getElementById('mobileOverlay');
-
-                if (!sidebarMenu) return;
-
-                // Membuka Drawer Menu Sisi
-                if (toggleBtn) {
-                    sidebarMenu.classList.remove('-translate-x-full');
-                    if (mobileOverlay) mobileOverlay.classList.remove('hidden');
+            function toggleSidebar() {
+                const isOpen = !sidebar.classList.contains("-translate-x-full");
+                if (isOpen) {
+                    sidebar.classList.add("-translate-x-full");
+                    backdrop.classList.add("hidden");
+                    backdrop.classList.remove("opacity-100");
+                    toggleBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
+                    document.body.style.overflow = ''; 
+                } else {
+                    sidebar.classList.remove("-translate-x-full");
+                    backdrop.classList.remove("hidden");
+                    setTimeout(() => backdrop.classList.add("opacity-100"), 10);
+                    toggleBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
                     document.body.style.overflow = 'hidden'; 
                 }
+                if (window.lucide) lucide.createIcons();
+            }
 
-                // Menutup Drawer Menu Sisi
-                if (closeBtn || overlay) {
-                    sidebarMenu.classList.add('-translate-x-full');
-                    if (mobileOverlay) mobileOverlay.classList.add('hidden');
-                    document.body.style.overflow = ''; 
-                }
+            toggleBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggleSidebar();
             });
+            
+            backdrop.addEventListener("click", toggleSidebar);
+
+            // Handle sub-component fallback close trigger buttons if they exist
+            const closeMenuBtn = container.querySelector("#closeMenuBtn") || document.getElementById('closeMenuBtn');
+            if (closeMenuBtn) {
+                closeMenuBtn.addEventListener('click', toggleSidebar);
+            }
         }
 
         async function fetchInspections(session) {

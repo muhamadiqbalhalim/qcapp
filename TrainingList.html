@@ -12,7 +12,7 @@
             display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr));
         }
-        /* Custom scrollbar untuk event kecil dalam kalendar */
+        /* Custom scrollbar for small calendar events */
         .event-container::-webkit-scrollbar {
             width: 4px;
         }
@@ -20,7 +20,7 @@
             background-color: #cbd5e1;
             border-radius: 4px;
         }
-        /* Sembunyikan scrollbar untuk calendar wrapper pada mobile tapi kekalkan fungsi scroll */
+        /* Hide scrollbar wrapper on mobile but keep scrolling functionality */
         .hide-scroll::-webkit-scrollbar {
             display: none;
         }
@@ -34,11 +34,12 @@
 <body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-blue-200">
 
     <div class="flex flex-col md:flex-row min-h-screen">
-        <div id="sidebar-container" class="md:h-screen sticky top-0 z-50"></div>
+        
+        <div id="sidebar-container" class="w-full md:w-auto md:sticky md:top-0 md:h-screen z-50 shrink-0"></div>
 
         <main class="flex-1 p-4 sm:p-6 md:p-8 w-full max-w-full">
             
-            <header class="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+            <header class="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-5 mt-2 md:mt-0">
                 <div>
                     <h1 class="text-2xl sm:text-3xl font-black flex items-center gap-3 tracking-tight text-slate-800">
                         <i id="header-icon" data-lucide="calendar-days" class="text-blue-600 w-7 h-7 sm:w-8 sm:h-8"></i> 
@@ -68,7 +69,7 @@
 
                 <div class="w-full overflow-x-auto hide-scroll pb-2">
                     <div class="min-w-[700px] w-full"> 
-                        <div class="calendar-grid bg-slate-101/50 border-b border-slate-200 text-center py-3 text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        <div class="calendar-grid bg-slate-100/50 border-b border-slate-200 text-center py-3 text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
                             <div>Sun</div>
                             <div>Mon</div>
                             <div>Tue</div>
@@ -149,11 +150,11 @@
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1.5">Venue</label>
-                    <input type="text" id="txtNewLocation" required placeholder="e.g., Kantin NSSB" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all">
+                    <input type="text" id="txtNewLocation" required placeholder="e.g., NSSB Canteen" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1.5">PIC</label>
-                    <input type="text" id="txtNewPic" required placeholder="e.g., Cik Haiza" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all">
+                    <label class="block font-bold text-slate-700 mb-1.5">PIC (Person In Charge)</label>
+                    <input type="text" id="txtNewPic" required placeholder="e.g., Ms. Haiza" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1.5">Allowed Depts (Comma Separated)</label>
@@ -174,17 +175,17 @@
         import { ROLES, RoleManager } from './js/Roles.js';
         import { loadSidebar } from './js/sidebar-loader.js';
 
-        // Validasi Sesi Pengguna
+        // Validate Session User
         const user = JSON.parse(localStorage.getItem('session'));
         if (!user) RoleManager.forceLogout();
 
-        // Tetapkan Hak Akses Admin/Leader/Exec
+        // Establish Role Rights
         const isExec = user.role === ROLES.EXECUTIVE;
         const isLeader = user.role === ROLES.QC_LEADER;
         const isAdmin = isExec || isLeader;
         const themeColor = isExec ? 'amber' : (isLeader ? 'purple' : 'blue');
 
-        // Parameter Keadaan Kalendar Global
+        // Global Calendar State
         let currentDate = new Date();
         let trainingsCache = [];
         let registrationsCache = new Map(); 
@@ -208,8 +209,47 @@
             }, 300);
         };
 
+        // Standardized Layout Control Binds
+        function setupMobileMenuEvents() {
+            const container = document.getElementById('sidebar-container');
+            
+            const toggleBtn = container.querySelector("#mobileSidebarToggle") || container.querySelector("#mobileMenuBtn") || container.querySelector("button");
+            const sidebar = container.querySelector("#mainSidebar") || container.querySelector("#sidebarMenu") || container.querySelector("aside");
+            const backdrop = container.querySelector("#sidebarBackdrop") || container.querySelector("#mobileOverlay") || container.querySelector(".backdrop-blur-sm");
+            
+            if (!toggleBtn || !sidebar || !backdrop) return;
+
+            function toggleSidebar() {
+                const isOpen = !sidebar.classList.contains("-translate-x-full");
+                if (isOpen) {
+                    sidebar.classList.add("-translate-x-full");
+                    backdrop.classList.add("hidden");
+                    backdrop.classList.remove("opacity-100");
+                    toggleBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
+                } else {
+                    sidebar.classList.remove("-translate-x-full");
+                    backdrop.classList.remove("hidden");
+                    setTimeout(() => backdrop.classList.add("opacity-100"), 10);
+                    toggleBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
+                }
+                if (window.lucide) lucide.createIcons();
+            }
+
+            toggleBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggleSidebar();
+            });
+            
+            backdrop.addEventListener("click", toggleSidebar);
+
+            const closeBtn = container.querySelector("#closeMenuBtn") || container.querySelector("#closeSidebar");
+            if (closeBtn) {
+                closeBtn.addEventListener('click', toggleSidebar);
+            }
+        }
+
         async function initApp() {
-            // Tukar warna mengikut Peranan Sesi
+            // Apply Theme UI Rules
             document.getElementById('header-icon').className = `text-${themeColor}-600 w-7 h-7 sm:w-8 sm:h-8`;
             
             if (isAdmin) {
@@ -219,61 +259,28 @@
                 document.getElementById('adminBadgeContainer').classList.remove('hidden');
             }
 
-            // Muatkan fail sidebar mengikut status peranan
+            // Route dynamic sidebar load mechanism based on verified active session role 
             const targetSidebar = isExec ? 'SidebarExecutive.html' : (isLeader ? 'SidebarLeader.html' : 'SidebarOperator.html');
             await loadSidebar(targetSidebar);
+            
+            setupMobileMenuEvents();
 
-            // PASANG SOLUSI PENGURUSAN TOGGLE SIDEBAR DI SINI
-            setupSidebarToggle();
-
-            // Pasang Event Listeners Navigasi Kalendar
             document.getElementById('prevMonthBtn').addEventListener('click', () => changeMonth(-1));
             document.getElementById('nextMonthBtn').addEventListener('click', () => changeMonth(1));
-            
-            // Dapatkan borang admin listeners
             document.getElementById('createTrainingForm').addEventListener('submit', handleCreateTrainingSubmit);
 
-            // Jalankan muat turun data Firebase & Render utama
             await fetchCalendarData();
-        }
-
-        // Fungsi Global Event Delegation untuk pembukaan menu laci (sidebar drawer) pada Mobile
-        function setupSidebarToggle() {
-            document.addEventListener('click', (e) => {
-                const toggleBtn = e.target.closest('#mobileMenuBtn');
-                const closeBtn = e.target.closest('#closeMenuBtn');
-                const overlay = e.target.closest('#mobileOverlay');
-
-                const sidebarMenu = document.getElementById('sidebarMenu');
-                const mobileOverlay = document.getElementById('mobileOverlay');
-
-                if (!sidebarMenu) return;
-
-                // Logika Buka Drawer
-                if (toggleBtn) {
-                    sidebarMenu.classList.remove('-translate-x-full');
-                    if (mobileOverlay) mobileOverlay.classList.remove('hidden');
-                    document.body.style.overflow = 'hidden'; 
-                }
-
-                // Logika Tutup Drawer
-                if (closeBtn || overlay) {
-                    sidebarMenu.classList.add('-translate-x-full');
-                    if (mobileOverlay) mobileOverlay.classList.add('hidden');
-                    document.body.style.overflow = ''; 
-                }
-            });
         }
 
         async function fetchCalendarData() {
             try {
                 const staffId = String(user.employeeId).trim();
                 
-                // 1. Muat turun semua latihan
+                // 1. Fetch entire directory of trainings
                 const txSnap = await getDocs(collection(db, "trainings"));
                 trainingsCache = txSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                // 2. Muat turun senarai pendaftaran saya
+                // 2. Fetch logged user's target registration map
                 const regSnap = await getDocs(query(collection(db, "training_registrations"), where("staffId", "==", staffId)));
                 registrationsCache = new Map();
                 regSnap.forEach(doc => {
@@ -281,10 +288,9 @@
                     registrationsCache.set(data.trainingId, data.attendanceStatus);
                 });
 
-                // Bina paparan kalendar fizikal
                 renderCalendar();
             } catch (err) {
-                console.error("Gagal memuat turun data kalendar:", err);
+                console.error("Failed to sync calendar database:", err);
             }
         }
 
@@ -302,7 +308,7 @@
             const grid = document.getElementById('calendarDaysGrid');
             grid.innerHTML = ""; 
 
-            // 1. Kotak kosong bulan lepas (Padding)
+            // 1. Render padding offsets for trailing month days
             for (let i = firstDayIndex; i > 0; i--) {
                 const dayNum = prevTotalDays - i + 1;
                 const cell = document.createElement('div');
@@ -311,7 +317,7 @@
                 grid.appendChild(cell);
             }
 
-            // 2. Kotak hari aktif bulan semasa
+            // 2. Render live days belonging to current map bounds
             for (let day = 1; day <= totalDays; day++) {
                 const cell = document.createElement('div');
                 const currentCellDateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -368,7 +374,7 @@
                 grid.appendChild(cell);
             }
 
-            // 3. Kotak kosong bulan depan (Padding)
+            // 3. Complete structural alignment by appending next month ghost columns
             const totalCellsSoFar = firstDayIndex + totalDays;
             const remainingCells = (7 - (totalCellsSoFar % 7)) % 7;
             for (let day = 1; day <= remainingCells; day++) {
@@ -386,7 +392,7 @@
             renderCalendar();
         }
 
-        // =============== TINDAKAN MODAL 1: VIEW DETAILS ===============
+        // =============== EVENT ACTIONS ===============
         async function openDetailsModal(t) {
             document.getElementById('modalTrainingName').textContent = t.name;
             document.getElementById('lblDate').textContent = t.dateString || "-";
@@ -459,19 +465,18 @@
                     timestamp: serverTimestamp()
                 });
 
-                alert(`Pendaftaran Berjaya! Sesi latihan anda: ${t.name}`);
+                alert(`Registration successful! You have joined: ${t.name}`);
                 window.closeModal('detailsModal');
                 await fetchCalendarData();
             } catch (err) {
                 console.error(err);
-                alert("Server error, pendaftaran gagal.");
+                alert("Server error, registration failed.");
                 btn.disabled = false;
                 btn.innerHTML = `Join Session <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
                 lucide.createIcons();
             }
         }
 
-        // =============== TINDAKAN MODAL 2: CREATE TRAINING ===============
         window.openCreateModalHelper = function(targetDateString) {
             document.getElementById('createTrainingForm').reset();
             document.getElementById('txtNewDate').value = targetDateString;
@@ -503,12 +508,12 @@
 
             try {
                 await addDoc(collection(db, "trainings"), newTrainingPayload);
-                alert("Sukses! Latihan baharu berjaya diterbitkan.");
+                alert("Success! New training session successfully published.");
                 window.closeModal('createModal');
                 await fetchCalendarData();
             } catch (err) {
-                console.error("Gagal mencipta latihan:", err);
-                alert("Gagal menyimpan latihan baharu.");
+                console.error("Failure processing new module:", err);
+                alert("Failed to save the new training record.");
             } finally {
                 btn.disabled = false;
                 btn.textContent = "Save To Server";
