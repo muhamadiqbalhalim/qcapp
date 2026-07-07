@@ -10,24 +10,33 @@
 </head>
 <body class="bg-[#F8FAFC] text-slate-900 font-sans min-h-screen">
 
-    <!-- Responsive Layout Shell -->
-    <div class="flex flex-col md:flex-row min-h-screen relative w-full">
-        
-        <!-- Sidebar Mounting Target (Managed dynamically by your script via loadSidebar) -->
-        <div id="sidebar-container" class="w-full md:w-auto md:sticky md:top-0 md:h-screen z-50 shrink-0"></div>
+    <div id="mobileOverlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[90] hidden opacity-0 transition-opacity duration-300 md:hidden"></div>
 
-        <!-- Main Workspace Area -->
+    <div class="flex flex-col md:flex-row min-h-screen relative w-full overflow-hidden">
+        
+        <div id="sidebar-container" class="fixed inset-y-0 left-0 z-[100] w-[280px] transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:w-auto md:sticky md:top-0 md:h-screen shrink-0 bg-white md:bg-transparent shadow-2xl md:shadow-none"></div>
+
         <main class="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
             
-            <!-- Dashboard Branding Header -->
+            <div class="md:hidden flex items-center justify-between mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 bg-amber-100 rounded-lg text-amber-600">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    </div>
+                    <p class="text-sm uppercase tracking-[0.15em] text-slate-800 font-black">QC Team</p>
+                </div>
+                <button id="mobileMenuBtn" class="p-2 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 hover:text-amber-600 transition-colors active:scale-95">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+
             <header class="mb-8 mt-2 md:mt-0">
-                <p class="text-xs uppercase tracking-[0.15em] text-amber-500 font-black mb-1.5">Executive Workspace</p>
+                <p class="hidden md:block text-xs uppercase tracking-[0.15em] text-amber-500 font-black mb-1.5">Executive Workspace</p>
                 <h1 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-slate-900">
                     Welcome, <span id="userName" class="text-amber-500">Norhafizah</span>
                 </h1>
             </header>
 
-            <!-- Metadata Profile Metrics -->
             <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                 <div class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Employee ID</p>
@@ -43,12 +52,10 @@
                 </div>
             </section>
 
-            <!-- Dashboard Analytics & Content Matrix -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                 
-                <!-- Chart Left Dynamic Deck (Takes up 1 column on desktop frames) -->
                 <div class="lg:col-span-1 space-y-8">
-                    <section class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <section class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                         <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800">
                             <i data-lucide="award" class="text-amber-500 w-5 h-5"></i> Skill Proficiency
                         </h3>
@@ -58,11 +65,9 @@
                     </section>
                 </div>
 
-                <!-- Operations Queues (Takes up 2 columns on desktop frames) -->
                 <div class="lg:col-span-2 space-y-8">
                     
-                    <!-- My Joined Trainings Section -->
-                    <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
                         <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800">
                             <i data-lucide="graduation-cap" class="text-amber-500 w-5 h-5"></i> My Joined Trainings
                         </h3>
@@ -74,8 +79,7 @@
                         </div>
                     </section>
 
-                    <!-- Submission Queue -->
-                    <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
                         <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-800">
                             <i data-lucide="inbox" class="text-amber-500 w-5 h-5"></i> New Submissions
                         </h3>
@@ -98,6 +102,31 @@
     import { loadSidebar } from './js/sidebar-loader.js';
     import { RoleManager, ROLES } from './js/Roles.js';
 
+    // === Mobile Sidebar Toggle Logic ===
+    const sidebar = document.getElementById('sidebar-container');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+
+    function toggleSidebar() {
+        const isOpen = !sidebar.classList.contains('-translate-x-full');
+        
+        if (isOpen) {
+            // Close Sidebar
+            sidebar.classList.add('-translate-x-full');
+            mobileOverlay.classList.remove('opacity-100');
+            setTimeout(() => mobileOverlay.classList.add('hidden'), 300);
+        } else {
+            // Open Sidebar
+            sidebar.classList.remove('-translate-x-full');
+            mobileOverlay.classList.remove('hidden');
+            setTimeout(() => mobileOverlay.classList.add('opacity-100'), 10);
+        }
+    }
+
+    mobileMenuBtn?.addEventListener('click', toggleSidebar);
+    mobileOverlay?.addEventListener('click', toggleSidebar);
+
+    // === Chart Initialization ===
     function initChart() {
         const ctx = document.getElementById('skillsChart').getContext('2d');
 
@@ -139,6 +168,7 @@
         });
     }
 
+    // === Dashboard Logic ===
     async function initDashboard() {
         try {
             // Security verification
