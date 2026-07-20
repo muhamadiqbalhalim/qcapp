@@ -31,13 +31,13 @@
         <div id="inspectionContainer" class="space-y-6"></div>
 
         <div class="bg-white p-6 rounded-3xl border shadow-sm mt-8 space-y-6">
-            <div>
+            <div id="executiveSelectContainer">
                 <label class="block text-sm font-black mb-3 text-slate-700">Select Executive Reviewer</label>
                 <select id="executiveSelect" class="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-white text-slate-800">
                     <option value="">Select Executive</option>
                 </select>
             </div>
-            <div>
+            <div id="leaderSelectContainer">
                 <label class="block text-sm font-black mb-3 text-slate-700">Select Leader Reviewer</label>
                 <select id="leaderSelect" class="w-full p-4 border-2 border-slate-200 rounded-2xl font-bold bg-white text-slate-800">
                     <option value="">Select Leader</option>
@@ -54,9 +54,9 @@
         import { db } from './js/FirebaseConfig.js';
         import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp } 
         from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-        import { RoleManager } from './js/Roles.js';
+        import { ROLES, RoleManager } from './js/Roles.js';
 
-        RoleManager.protectPage();
+        RoleManager.protectPage(ROLES.QC_LEADER, ROLES.QG_OPERATOR);
 
         const session = JSON.parse(localStorage.getItem("session"));
         const templateId = new URLSearchParams(window.location.search).get('id');
@@ -81,6 +81,12 @@
         async function initInspection() {
             const execSelect = document.getElementById('executiveSelect');
             const leaderSelect = document.getElementById('leaderSelect');
+            const leaderSelectContainer = document.getElementById('leaderSelectContainer');
+
+            // Logik Role-based View: Sembunyikan ruangan Leader jika yang menjawab adalah QC_LEADER
+            if (session.role === ROLES.QC_LEADER) {
+                leaderSelectContainer.style.display = 'none';
+            }
 
             try {
                 const usersSnap = await getDocs(collection(db, "users"));
@@ -96,7 +102,7 @@
                         execSelect.appendChild(opt);
                     }
 
-                    if (role === "QC_LEADER") {
+                    if (role === "QC_LEADER" && session.role !== ROLES.QC_LEADER) {
                         const opt = document.createElement('option');
                         opt.value = docSnap.id;
                         opt.textContent = `Leader: ${user.name || docSnap.id}`;
@@ -116,7 +122,6 @@
                 const calcTotalCT = (arr) => arr.reduce((acc, row) => acc + (parseInt(row.ct) || 0), 0);
                 totalBenchmarkedCT = calcTotalCT(data.lh || []) + calcTotalCT(data.rh || []);
 
-                // Ditambah 'LH' dan 'RH' prefix untuk elakkan id bertindih
                 renderSection('LEFT HAND (LH)', data.lh || [], 'border-amber-100', 'text-amber-600', 'LH');
                 renderSection('RIGHT HAND (RH)', data.rh || [], 'border-blue-100', 'text-blue-600', 'RH');
 
@@ -126,7 +131,6 @@
             }
         }
 
-        // Ditambah parameter sectionPrefix (LH/RH)
         function renderSection(title, rows, borderClass, textClass, sectionPrefix) {
             const container = document.getElementById('inspectionContainer');
             const section = document.createElement('div');
@@ -168,7 +172,6 @@
             container.appendChild(section);
         }
 
-        // Menggunakan prefix bagi menjamin nama radio sentiasa unik
         function renderRadio(isMandatory, type, rowId, sectionPrefix) {
             if (!isMandatory) return `<td class="p-3 border text-slate-200 font-bold">N/A</td>`;
             const name = `${sectionPrefix}_${type}_${rowId}`;
@@ -193,11 +196,26 @@
         }
 
         async function submitInspection() {
-            const executiveId = document.getElementById('executiveSelect').value;
-            const leaderId = document.getElementById('leaderSelect').value;
+            const operatorSession = JSON.parse(localStorage.getItem('session'));
+            const userId = String(operatorSession?.employeeId || operatorSession?.uid || "Unknown");
+            const userName = operatorSession?.name || "Operator";
 
-            if (!executiveId || !leaderId) {
-                alert("Please select both Executive and Leader!");
+            const executiveId = document.getElementById('executiveSelect').value;
+            let leaderId = document.getElementById('leaderSelect').value;
+
+            // Logik Role-based Validation
+            if (session.role === ROLES.QC_LEADER) {
+                // Jika Leader yang jawab, jadikan diri dia sendiri sebagai penyemak peringkat 1
+                leaderId = userId;
+            }
+
+            if (!executiveId) {
+                alert("Please select an Executive!");
+                return;
+            }
+
+            if (session.role !== ROLES.QC_LEADER && !leaderId) {
+                alert("Please select a Leader!");
                 return;
             }
 
@@ -230,7 +248,6 @@
                 totalRadioChecked++;
                 
                 if (input.value === 'fail') {
-                    // Penukaran regex supayat sepadan dengan struktur nama baru (LH_insp_1 atau RH_keyPt_2)
                     if (/_insp_|_keyPt_/.test(input.name)) {
                         defectFailCounts++;
                     }
@@ -240,11 +257,13 @@
                 }
             });
 
-            const operatorSession = JSON.parse(localStorage.getItem('session'));
-            const userId = String(operatorSession?.employeeId || operatorSession?.uid || "Unknown");
-            const userName = operatorSession?.name || "Operator";
-
             try {
+                // Konfigurasi status penyemakan dinamik 
+                // Jika Leader yang jawab, penyemakan peringkat 1 secara automatik diluluskan
+                const leaderApprovalData = session.role === ROLES.QC_LEADER 
+                    ? { status: "Approved", reviewedAt: serverTimestamp(), reason: "Auto-approved by self (Leader)" }
+                    : { status: "Pending" };
+
                 await addDoc(collection(db, "qc_inspection_submissions"), {
                     templateId: templateId,
                     operatorId: userId,
@@ -255,7 +274,7 @@
                     results: results,
                     status: "Pending",
                     executiveApproval: { status: "Pending" },
-                    leaderApproval: { status: "Pending" },
+                    leaderApproval: leaderApprovalData,
                     submittedAt: serverTimestamp()
                 });
 
@@ -264,7 +283,6 @@
                     timeEfficiencyScore = Math.max(30, Math.round((totalBenchmarkedCT / actualTimeSpentSeconds) * 100));
                 }
 
-                // Logik pembersihan untuk pengiraan chart harian kekal tepat
                 const totalSeqItems = mandatoryGroups.filter(g => /_seq_/.test(g)).length;
                 let sopAdherenceScore = 100;
                 if (totalSeqItems > 0) {

@@ -43,7 +43,8 @@
         import { loadSidebar } from './js/sidebar-loader.js';
         import { ROLES, RoleManager } from './js/Roles.js';
 
-        let userRole = null; // Store globally within script module to reference when rendering cards
+        let userRole = null; 
+        let currentUserSession = null;
 
         async function init() {
             try {
@@ -55,6 +56,7 @@
 
                 const session = JSON.parse(localStorage.getItem("session"));
                 userRole = session.role;
+                currentUserSession = session;
                 let sidebar = "SidebarOperator.html";
 
                 if (userRole === ROLES.QC_LEADER) {
@@ -65,9 +67,9 @@
 
                 await loadSidebar(sidebar);
 
-                // Initialize menu click event configurations immediately after the sidebar finishes injection
                 setupSidebarToggle();
 
+                // Leader and Executive boleh create template
                 if (userRole === ROLES.QC_LEADER || userRole === ROLES.EXECUTIVE) {
                     document.getElementById("newTemplateBtn").classList.remove("hidden");
                 }
@@ -79,11 +81,9 @@
             }
         }
 
-        // Standardized Mobile Menu Toggle (Matches Exam Manager exactly)
         function setupSidebarToggle() {
             const container = document.getElementById('sidebar-container');
             
-            // Includes fallback checks for different possible IDs in your loaded HTML
             const toggleBtn = container.querySelector("#mobileSidebarToggle") || document.getElementById("mobileSidebarToggle") || document.getElementById('mobileMenuBtn');
             const sidebar = container.querySelector("#mainSidebar") || document.getElementById('sidebarMenu') || container.querySelector("aside");
             const backdrop = container.querySelector("#sidebarBackdrop") || document.getElementById('mobileOverlay') || container.querySelector(".backdrop-blur-sm");
@@ -115,7 +115,6 @@
             
             backdrop.addEventListener("click", toggleSidebar);
 
-            // Handle sub-component fallback close trigger buttons if they exist
             const closeMenuBtn = container.querySelector("#closeMenuBtn") || document.getElementById('closeMenuBtn');
             if (closeMenuBtn) {
                 closeMenuBtn.addEventListener('click', toggleSidebar);
@@ -127,18 +126,16 @@
             const loader = document.getElementById('loader');
 
             try {
-                // 1. Dapatkan senarai semua pelan induk template audit
                 const qTemplates = query(collection(db, "qc_inspection_templates"), orderBy("createdAt", "desc"));
                 const snapTemplates = await getDocs(qTemplates);
 
-                // 2. Dapatkan senarai data jawapan audit milik akaun pekerja semasa
+                // Tarik data hanya untuk submitter semasa (Leader & Operator akan ada data ini)
                 const qSubmissions = query(
                     collection(db, "qc_inspection_submissions"), 
                     where("submittedBy.id", "==", session.employeeId || session.uid)
                 );
                 const snapSubmissions = await getDocs(qSubmissions);
 
-                // 3. Bina pemetaan objek bagi rujukan pantas berasaskan templateId
                 const submissionMap = {};
                 snapSubmissions.forEach(subDoc => {
                     const subData = subDoc.data();
@@ -196,7 +193,6 @@
                     });
                 });
 
-                // Isih data: Utamakan tugasan baharu, diikuti tugasan pending dan tugasan selesai
                 inspectionsList.sort((a, b) => {
                     if (a.sortWeight !== b.sortWeight) {
                         return a.sortWeight - b.sortWeight;
@@ -242,99 +238,107 @@
             let actionButtonHTML = "";
             let rejectionReasonsHTML = "";
 
-            if (!userSubmission) {
-                // PAPARAN KAD: JIKA BELUM DIKUNCI / BELUM AMBIL AUDIT
-                statusBadgeHTML = `<span class="bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider shrink-0 shadow-sm">Not Started</span>`;
+            // LOGIK PAPARAN UNTUK EXECUTIVE (Tak jawab, cuma boleh Edit)
+            if (userRole === ROLES.EXECUTIVE) {
+                statusBadgeHTML = `<span class="bg-purple-100 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider shrink-0 shadow-sm">Template</span>`;
                 actionButtonHTML = `
-                    <button onclick="window.location.href='TakeInspection.html?id=${templateId}'"
-                        class="w-full py-3.5 bg-purple-600 text-white font-black rounded-xl hover:bg-purple-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-sm">
-                        <i data-lucide="play" size="16"></i> Start Inspection
-                    </button>`;
-            } else {
-                // PAPARAN KAD: JIKA DATA BORANG DAH SUBMITTED
-                const leaderApp = userSubmission.leaderApproval || {};
-                const execApp = userSubmission.executiveApproval || userSubmission.exectutiveApproval || {};
+                    <button onclick="window.location.href='EditInspection.html?editId=${templateId}'"
+                        class="w-full mt-2.5 py-3.5 px-4 bg-white text-slate-600 border border-slate-200 rounded-xl font-black text-xs uppercase tracking-wider hover:bg-slate-50 hover:text-purple-700 hover:border-purple-200 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98]">
+                        <i data-lucide="edit-3" size="15"></i> Edit Template Configuration
+                    </button>
+                `;
+            } 
+            // LOGIK PAPARAN UNTUK LEADER & OPERATOR (Boleh jawab, tak boleh Edit)
+            else {
+                const creatorId = data.createdBy?.id || data.createdById || null;
+                const currentUserId = String(currentUserSession?.employeeId || currentUserSession?.uid || "");
+                const isOwnTemplate = creatorId && String(creatorId) === currentUserId;
 
-                let badgeClass = "bg-amber-50 text-amber-700 border-amber-200"; 
-                if (overallStatus === "Approved") badgeClass = "bg-green-100 text-green-800 border-green-300";
-                if (overallStatus === "Rejected") badgeClass = "bg-red-100 text-red-800 border-red-300";
-
-                statusBadgeHTML = `<span class="px-3 py-1.5 rounded-lg border ${badgeClass} text-xs font-black tracking-wider uppercase shrink-0 shadow-sm">${overallStatus}</span>`;
-
-                const isLeaderApproved = leaderApp.status === 'Approved';
-                const isExecApproved = execApp.status === 'Approved';
-
-                approvalTracksHTML = `
-                    <div class="mt-5 space-y-3">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-dashed border-slate-200 pb-2">Approval Progress</p>
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="text-slate-500 font-bold flex items-center gap-1.5">
-                                <i data-lucide="shield-check" size="14" class="text-slate-400"></i> QC Leader
-                            </span>
-                            <span class="font-black px-2.5 py-1 rounded-md ${isLeaderApproved ? 'bg-green-50 text-green-600' : (leaderApp.status === 'Rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600')}">
-                                ${leaderApp.status || 'Pending'}
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="text-slate-500 font-bold flex items-center gap-1.5">
-                                <i data-lucide="user-check" size="14" class="text-slate-400"></i> Executive
-                            </span>
-                            <span class="font-black px-2.5 py-1 rounded-md ${isExecApproved ? 'bg-green-50 text-green-600' : (execApp.status === 'Rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600')}">
-                                ${execApp.status || 'Pending'}
-                            </span>
-                        </div>
-                    </div>`;
-
-                // DIKEMASKINI: Logik Kekunci Tindakan Dinamik mengikut standard Enterprise Sistem
-                if (overallStatus === "Pending") {
-                    actionButtonHTML = `
-                        <div class="w-full py-3.5 bg-slate-50 text-slate-400 font-black rounded-xl border border-slate-200/80 text-center text-xs flex items-center justify-center gap-2 select-none">
-                            <i data-lucide="lock" size="16" class="text-slate-400"></i> Locked — Under Review
-                        </div>`;
-                } else if (overallStatus === "Approved") {
-                    actionButtonHTML = `
-                        <div class="w-full py-3.5 bg-green-50 text-green-700 font-black rounded-xl border border-green-200 text-center text-xs flex items-center justify-center gap-2 select-none shadow-sm">
-                            <i data-lucide="check-circle" size="16"></i> Certified & Approved
-                        </div>`;
-                } else if (overallStatus === "Rejected") {
-                    // Jika Rejected, tukar butang untuk membolehkan operator hantar semula (Retake/Redo)
-                    actionButtonHTML = `
-                        <button onclick="window.location.href='TakeInspection.html?id=${templateId}'"
-                            class="w-full py-3.5 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-sm">
-                            <i data-lucide="alert-triangle" size="16"></i> Retake Inspection
-                        </button>`;
-
-                    // Ambil nota ulasan/sebab kenapa audit ditolak oleh penyemak
-                    let reasons = [];
-                    if (leaderApp.status === 'Rejected' && leaderApp.reason) {
-                        reasons.push(`<strong>Leader:</strong> "${leaderApp.reason}"`);
-                    }
-                    if (execApp.status === 'Rejected' && execApp.reason) {
-                        reasons.push(`<strong>Executive:</strong> "${execApp.reason}"`);
-                    }
-
-                    if (reasons.length > 0) {
-                        rejectionReasonsHTML = `
-                            <div class="mt-4 p-3.5 bg-red-50 border border-red-100 rounded-xl text-[11px] text-red-700 space-y-1.5 shadow-sm">
-                                <p class="font-black uppercase tracking-wider text-[10px] text-red-500 flex items-center gap-1.5 border-b border-red-100 pb-1.5 mb-1.5">
-                                    <i data-lucide="message-square" size="12"></i> Rejection Feedback
-                                </p>
-                                ${reasons.map(r => `<p class="leading-relaxed font-semibold">${r}</p>`).join('')}
+                if (!userSubmission) {
+                    if (userRole === ROLES.QC_LEADER && isOwnTemplate) {
+                        statusBadgeHTML = `<span class="bg-slate-100 text-slate-400 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider shrink-0 shadow-sm">Author</span>`;
+                        actionButtonHTML = `
+                            <div class="w-full py-3.5 bg-slate-50 text-slate-400 font-black rounded-xl border border-slate-200/80 text-center text-xs flex items-center justify-center gap-2 select-none shadow-sm cursor-not-allowed">
+                                <i data-lucide="ban" size="16"></i> Cannot Inspect Own Template
                             </div>`;
+                    } else {
+                        statusBadgeHTML = `<span class="bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider shrink-0 shadow-sm">Not Started</span>`;
+                        actionButtonHTML = `
+                            <button onclick="window.location.href='TakeInspection.html?id=${templateId}'"
+                                class="w-full py-3.5 bg-purple-600 text-white font-black rounded-xl hover:bg-purple-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-sm">
+                                <i data-lucide="play" size="16"></i> Start Inspection
+                            </button>`;
+                    }
+                } else {
+                    const leaderApp = userSubmission.leaderApproval || {};
+                    const execApp = userSubmission.executiveApproval || userSubmission.exectutiveApproval || {};
+
+                    let badgeClass = "bg-amber-50 text-amber-700 border-amber-200"; 
+                    if (overallStatus === "Approved") badgeClass = "bg-green-100 text-green-800 border-green-300";
+                    if (overallStatus === "Rejected") badgeClass = "bg-red-100 text-red-800 border-red-300";
+
+                    statusBadgeHTML = `<span class="px-3 py-1.5 rounded-lg border ${badgeClass} text-xs font-black tracking-wider uppercase shrink-0 shadow-sm">${overallStatus}</span>`;
+
+                    const isLeaderApproved = leaderApp.status === 'Approved';
+                    const isExecApproved = execApp.status === 'Approved';
+
+                    approvalTracksHTML = `
+                        <div class="mt-5 space-y-3">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-dashed border-slate-200 pb-2">Approval Progress</p>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-500 font-bold flex items-center gap-1.5">
+                                    <i data-lucide="shield-check" size="14" class="text-slate-400"></i> QC Leader
+                                </span>
+                                <span class="font-black px-2.5 py-1 rounded-md ${isLeaderApproved ? 'bg-green-50 text-green-600' : (leaderApp.status === 'Rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600')}">
+                                    ${leaderApp.status || 'Pending'}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-500 font-bold flex items-center gap-1.5">
+                                    <i data-lucide="user-check" size="14" class="text-slate-400"></i> Executive
+                                </span>
+                                <span class="font-black px-2.5 py-1 rounded-md ${isExecApproved ? 'bg-green-50 text-green-600' : (execApp.status === 'Rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600')}">
+                                    ${execApp.status || 'Pending'}
+                                </span>
+                            </div>
+                        </div>`;
+
+                    if (overallStatus === "Pending") {
+                        actionButtonHTML = `
+                            <div class="w-full py-3.5 bg-slate-50 text-slate-400 font-black rounded-xl border border-slate-200/80 text-center text-xs flex items-center justify-center gap-2 select-none">
+                                <i data-lucide="lock" size="16" class="text-slate-400"></i> Locked — Under Review
+                            </div>`;
+                    } else if (overallStatus === "Approved") {
+                        actionButtonHTML = `
+                            <div class="w-full py-3.5 bg-green-50 text-green-700 font-black rounded-xl border border-green-200 text-center text-xs flex items-center justify-center gap-2 select-none shadow-sm">
+                                <i data-lucide="check-circle" size="16"></i> Certified & Approved
+                            </div>`;
+                    } else if (overallStatus === "Rejected") {
+                        actionButtonHTML = `
+                            <button onclick="window.location.href='TakeInspection.html?id=${templateId}'"
+                                class="w-full py-3.5 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-sm">
+                                <i data-lucide="alert-triangle" size="16"></i> Retake Inspection
+                            </button>`;
+
+                        let reasons = [];
+                        if (leaderApp.status === 'Rejected' && leaderApp.reason) {
+                            reasons.push(`<strong>Leader:</strong> "${leaderApp.reason}"`);
+                        }
+                        if (execApp.status === 'Rejected' && execApp.reason) {
+                            reasons.push(`<strong>Executive:</strong> "${execApp.reason}"`);
+                        }
+
+                        if (reasons.length > 0) {
+                            rejectionReasonsHTML = `
+                                <div class="mt-4 p-3.5 bg-red-50 border border-red-100 rounded-xl text-[11px] text-red-700 space-y-1.5 shadow-sm">
+                                    <p class="font-black uppercase tracking-wider text-[10px] text-red-500 flex items-center gap-1.5 border-b border-red-100 pb-1.5 mb-1.5">
+                                        <i data-lucide="message-square" size="12"></i> Rejection Feedback
+                                    </p>
+                                    ${reasons.map(r => `<p class="leading-relaxed font-semibold">${r}</p>`).join('')}
+                                </div>`;
+                        }
                     }
                 }
-            }
-
-            // INJECT EDIT BUTTON SYSTEM: Semak kebenaran role menggunakan ROLES object rujukan
-            if (userRole === ROLES.QC_LEADER || userRole === ROLES.EXECUTIVE) {
-                actionButtonHTML = `
-                    <div class="flex gap-2">
-                        <button onclick="window.location.href='EditInspection.html?editId=${templateId}'"
-                            class="flex-1 py-3.5 px-4 bg-purple-600 text-white rounded-xl font-black text-xs uppercase tracking-wider hover:bg-purple-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
-                            <i data-lucide="edit-3" size="15"></i> Edit Configuration
-                        </button>
-                    </div>
-                `;
             }
 
             const authorInfo = `
