@@ -49,45 +49,41 @@
 
         const user = JSON.parse(localStorage.getItem("session"));
 
-        // Binds event triggers for controlling mobile navigation drawer via modular elements
+        // Global Event Delegation for dynamic sidebar control
         function setupMobileMenuEvents() {
-            const container = document.getElementById('sidebar-container');
-            
-            // Note: Ensure your loaded sidebar HTML has a button with id="mobileSidebarToggle" for the orange menu to work
-            const toggleBtn = container.querySelector("#mobileSidebarToggle") || document.getElementById("mobileSidebarToggle");
-            const sidebar = container.querySelector("#mainSidebar") || document.getElementById('sidebarMenu') || container.querySelector("aside");
-            const backdrop = container.querySelector("#sidebarBackdrop") || document.getElementById('mobileOverlay') || container.querySelector(".backdrop-blur-sm");
-            
-            if (!toggleBtn || !sidebar || !backdrop) return;
+            document.addEventListener('click', (e) => {
+                // Catch any clicks on toggle buttons, close buttons, or the dark overlay
+                const toggleBtn = e.target.closest('#mobileMenuBtn') || e.target.closest('#mobileSidebarToggle');
+                const closeBtn = e.target.closest('#closeMenuBtn');
+                const overlay = e.target.closest('#mobileOverlay') || e.target.closest('#sidebarBackdrop');
 
-            function toggleSidebar() {
-                const isOpen = !sidebar.classList.contains("-translate-x-full");
-                if (isOpen) {
-                    sidebar.classList.add("-translate-x-full");
-                    backdrop.classList.add("hidden");
-                    backdrop.classList.remove("opacity-100");
-                    toggleBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
-                } else {
-                    sidebar.classList.remove("-translate-x-full");
-                    backdrop.classList.remove("hidden");
-                    setTimeout(() => backdrop.classList.add("opacity-100"), 10);
-                    toggleBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
+                // Identify the sidebar elements dynamically
+                const sidebarMenu = document.getElementById('sidebarMenu') || document.getElementById('mainSidebar') || document.querySelector('aside');
+                const mobileOverlay = document.getElementById('mobileOverlay') || document.getElementById('sidebarBackdrop');
+
+                if (!sidebarMenu) return; // Exit if sidebar hasn't loaded yet
+
+                // Handle Opening the sidebar
+                if (toggleBtn) {
+                    sidebarMenu.classList.remove('-translate-x-full');
+                    if (mobileOverlay) {
+                        mobileOverlay.classList.remove('hidden');
+                        // Small timeout to allow display:block to register before changing opacity for transition
+                        setTimeout(() => mobileOverlay.classList.add('opacity-100'), 10);
+                    }
+                    document.body.style.overflow = 'hidden'; // Prevent background scrolling
                 }
-                if (window.lucide) lucide.createIcons();
-            }
 
-            toggleBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                toggleSidebar();
+                // Handle Closing the sidebar
+                if (closeBtn || overlay) {
+                    sidebarMenu.classList.add('-translate-x-full');
+                    if (mobileOverlay) {
+                        mobileOverlay.classList.remove('opacity-100');
+                        setTimeout(() => mobileOverlay.classList.add('hidden'), 200);
+                    }
+                    document.body.style.overflow = ''; // Restore scrolling
+                }
             });
-            
-            backdrop.addEventListener("click", toggleSidebar);
-
-            // Handle sub-component fallback close trigger buttons if they exist
-            const closeMenuBtn = container.querySelector("#closeMenuBtn") || document.getElementById('closeMenuBtn');
-            if (closeMenuBtn) {
-                closeMenuBtn.addEventListener('click', toggleSidebar);
-            }
         }
 
         // Application main layout initialization pipeline loop
@@ -97,7 +93,7 @@
                 const targetSidebar = user.role === ROLES.EXECUTIVE ? 'SidebarExecutive.html' : 'SidebarLeader.html';
                 await loadSidebar(targetSidebar);
 
-                // Initialize menu click event configurations immediately after the sidebar finishes injection
+                // Initialize menu click event configurations
                 setupMobileMenuEvents();
 
                 // Fetch exam configurations from backend database service collections

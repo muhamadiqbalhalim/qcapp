@@ -124,13 +124,13 @@
                     <div class="bg-slate-50/50 p-6 rounded-3xl border border-slate-200 flex flex-col h-[500px]">
                         <h3 class="font-black text-lg mb-5 flex items-center justify-between gap-2 text-slate-800 pb-4 border-b border-slate-200 shrink-0">
                             <span class="flex items-center gap-2">
-                                <i data-lucide="list-todo" size="20" class="text-blue-600"></i> Assessment Queue
+                                <i data-lucide="list-todo" size="20" class="text-purple-600"></i> Assessment Queue
                             </span>
-                            <span class="bg-blue-100 text-blue-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider">Requires Action</span>
+                            <span class="bg-purple-100 text-purple-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider">Requires Action</span>
                         </h3>
                         <div id="submissionList" class="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
                             <div class="flex flex-col items-center justify-center h-full space-y-2">
-                                <i data-lucide="loader-2" class="animate-spin text-blue-400" size="24"></i>
+                                <i data-lucide="loader-2" class="animate-spin text-purple-400" size="24"></i>
                                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Loading...</p>
                             </div>
                         </div>
@@ -402,17 +402,17 @@
                 } else {
                     pendingSubmissions.forEach(s => {
                         const isExam = s.type === 'Exam';
-                        const iconColor = isExam ? "text-blue-500" : "text-amber-500";
+                        const iconColor = isExam ? "text-purple-500" : "text-amber-500";
                         const iconName = isExam ? "file-text" : "clipboard-check";
                         
                         const typeBadge = isExam 
-                            ? `<span class="inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border bg-blue-50 text-blue-700 border-blue-200">Exam</span>`
+                            ? `<span class="inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border bg-purple-50 text-purple-700 border-purple-200">Exam</span>`
                             : `<span class="inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border bg-amber-50 text-amber-700 border-amber-200">Inspection</span>`;
 
                         submissionList.innerHTML += `
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl gap-4 hover:shadow-md hover:border-blue-200 transition-all group">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl gap-4 hover:shadow-md hover:border-purple-200 transition-all group">
                                 <div class="space-y-2 truncate">
-                                    <p class="font-black text-slate-800 text-[15px] truncate group-hover:text-blue-700 transition-colors">${s.operatorName || "Anonymous Operator"}</p>
+                                    <p class="font-black text-slate-800 text-[15px] truncate group-hover:text-purple-700 transition-colors">${s.operatorName || "Anonymous Operator"}</p>
                                     <p class="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 truncate">
                                         <i data-lucide="${iconName}" size="14" class="${iconColor}"></i> ${s.title}
                                     </p>
@@ -422,7 +422,7 @@
                                     </div>
                                 </div>
                                 <div class="mt-1 sm:mt-0 shrink-0 w-full sm:w-auto">
-                                    <a href="ReviewSubmission.html" class="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black hover:bg-blue-700 active:scale-[0.98] transition-all shadow-sm flex items-center justify-center gap-1.5">
+                                    <a href="ReviewSubmission.html" class="w-full sm:w-auto px-4 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-black hover:bg-purple-700 active:scale-[0.98] transition-all shadow-sm flex items-center justify-center gap-1.5">
                                         <i data-lucide="clipboard-signature" size="14"></i> Review
                                     </a>
                                 </div>
