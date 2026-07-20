@@ -116,7 +116,7 @@
         // Retrieves exam datasets and compiles interactive status blocks dynamically
         async function loadExams() {
             const grid = document.getElementById('examGrid');
-            const snap = await getDocs(collection(db, "qc_exams"));
+            const snap = await getDocs(collection(db, "qc_exams_templates"));
             grid.innerHTML = "";
 
             if (snap.empty) {
@@ -186,7 +186,7 @@
         window.toggleStatus = async (id, currentStatus) => {
             const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
             try {
-                await updateDoc(doc(db, "qc_exams", id), { status: newStatus });
+                await updateDoc(doc(db, "qc_exams_templates", id), { status: newStatus });
                 await loadExams();
             } catch (err) {
                 console.error("Status Change Toggle Request Error:", err);

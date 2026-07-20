@@ -271,7 +271,7 @@
                 setupSidebarToggle();
 
                 // Fetch Database Values
-                const docSnap = await getDoc(doc(db, "inspection_templates", templateId));
+                const docSnap = await getDoc(doc(db, "qc_inspection_templates", templateId));
                 if (!docSnap.exists()) {
                     alert("The requested template data node was not discovered inside firestore references.");
                     window.location.href = "InspectionList.html";
@@ -321,7 +321,7 @@
                 const lh = await processRows('rowsLH');
                 const rh = await processRows('rowsRH');
 
-                await updateDoc(doc(db, "inspection_templates", templateId), {
+                await updateDoc(doc(db, "qc_inspection_templates", templateId), {
                     title: titleInput,
                     lh, 
                     rh

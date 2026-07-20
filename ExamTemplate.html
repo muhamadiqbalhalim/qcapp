@@ -145,7 +145,7 @@
             document.getElementById('headerTitle').innerText = "Modify Assessment Profile";
             document.getElementById('saveBtn').innerText = "Update Assessment Configuration";
             
-            const snap = await getDoc(doc(db, "qc_exams", editId));
+            const snap = await getDoc(doc(db, "qc_exams_templates", editId));
             if (snap.exists()) {
                 const data = snap.data();
                 document.getElementById('examTitle').value = data.title || "";
@@ -304,11 +304,11 @@
                 };
 
                 if (editId) {
-                    await updateDoc(doc(db, "qc_exams", editId), examData);
+                    await updateDoc(doc(db, "qc_exams_templates", editId), examData);
                     alert("Assessment dynamic specification bundle updated inside registry matrix.");
                 } else {
                     examData.createdAt = serverTimestamp();
-                    await addDoc(collection(db, "qc_exams"), examData);
+                    await addDoc(collection(db, "qc_exams_templates"), examData);
                     alert("Assessment dynamic template created and synced across live stream channels.");
                 }
 

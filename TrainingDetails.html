@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Details | QC Team</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 font-sans antialiased">
+
+    <div id="main-content" style="display: none;">
+        <div class="flex flex-col md:flex-row min-h-screen">
+            <!-- Sidebar Injected Here -->
+            <div id="sidebar-container" class="w-full md:w-auto md:sticky md:top-0 md:h-screen z-50 shrink-0"></div>
+
+            <main class="flex-1 p-4 md:p-8 overflow-y-auto w-full max-w-6xl mx-auto">
+                
+                <!-- Header & Navigation -->
+                <header class="mb-8 mt-2 md:mt-0">
+                    <a href="QCLeaderDashboard.html" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-purple-600 transition-colors mb-4 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm w-fit">
+                        <i data-lucide="arrow-left" size="14"></i> Back to Dashboard
+                    </a>
+                    
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-6">
+                        <div>
+                            <p class="text-[11px] uppercase tracking-widest text-purple-600 font-black mb-1.5 flex items-center gap-1.5">
+                                <i data-lucide="graduation-cap" size="14"></i> Training Module
+                            </p>
+                            <h1 id="pageTitle" class="text-3xl md:text-4xl font-black tracking-tight text-slate-800">
+                                Loading Details...
+                            </h1>
+                        </div>
+                        <div id="statusBadgeContainer" class="shrink-0 mt-2 sm:mt-0">
+                            <!-- Status badge injected via JS -->
+                        </div>
+                    </div>
+                </header>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Left Column: Training Info -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <!-- Info Card -->
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+                            <div class="absolute -top-16 -right-16 w-32 h-32 bg-purple-50 rounded-full blur-2xl opacity-60 pointer-events-none"></div>
+                            
+                            <h3 class="font-black text-lg text-slate-800 mb-5 flex items-center gap-2 border-b border-slate-100 pb-3">
+                                <i data-lucide="info" size="18" class="text-purple-600"></i> Event Overview
+                            </h3>
+                            
+                            <div class="space-y-5 relative z-10">
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Schedule</p>
+                                    <p id="dtDate" class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                        <i data-lucide="calendar" size="16" class="text-slate-400"></i> <span id="dtDateText">-</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Location</p>
+                                    <p id="dtVenue" class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                        <i data-lucide="map-pin" size="16" class="text-slate-400"></i> <span id="dtVenueText">-</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Description</p>
+                                    <p id="dtDesc" class="text-sm text-slate-600 leading-relaxed font-medium bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                        No description provided.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stats Card -->
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl shadow-sm text-white relative overflow-hidden">
+                            <i data-lucide="users" size="80" class="absolute -bottom-4 -right-4 text-slate-700 opacity-30"></i>
+                            <h3 class="font-black text-sm text-slate-300 mb-4 uppercase tracking-wider relative z-10">Attendance Stats</h3>
+                            
+                            <div class="flex items-end gap-3 relative z-10">
+                                <span id="statAttended" class="text-4xl font-black text-white">0</span>
+                                <span class="text-slate-400 font-bold mb-1">/ <span id="statRegistered">0</span> Registered</span>
+                            </div>
+                            
+                            <div class="w-full bg-slate-700 rounded-full h-1.5 mt-4 relative z-10 overflow-hidden">
+                                <div id="attendanceProgressBar" class="bg-green-400 h-1.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Participant List -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm h-full flex flex-col min-h-[500px]">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-slate-100 pb-4 shrink-0">
+                                <div>
+                                    <h3 class="font-black text-xl flex items-center gap-2 text-slate-800">
+                                        <i data-lucide="clipboard-list" size="22" class="text-blue-600"></i> Participant Roster
+                                    </h3>
+                                    <p class="text-xs font-bold text-slate-400 mt-1">Personnel registered for this module</p>
+                                </div>
+                                
+                                <!-- Search Filter for Participants -->
+                                <div class="relative w-full sm:w-64">
+                                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size="14"></i>
+                                    <input type="text" id="searchParticipant" placeholder="  Search by name or ID..." class="w-full pl-8 pr-3 py-2 text-xs font-bold rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-slate-50 transition-all">
+                                </div>
+                            </div>
+
+                            <div id="participantList" class="space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                <!-- Loading State -->
+                                <div class="flex flex-col items-center justify-center h-full space-y-3 py-10">
+                                    <i data-lucide="loader-2" class="animate-spin text-blue-400" size="32"></i>
+                                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Fetching Roster...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Fullscreen Initial Loader -->
+    <div id="loading" class="flex justify-center items-center h-screen bg-[#F8FAFC]">
+        <div class="text-center">
+            <i data-lucide="loader-2" class="animate-spin text-purple-600 mx-auto" size="48"></i>
+            <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-4">Loading Details...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/FirebaseConfig.js';
+        import { doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { loadSidebar } from './js/sidebar-loader.js';
+        import { RoleManager, ROLES } from './js/Roles.js';
+
+        let globalParticipants = []; // Stores combined registration & attendance data for filtering
+
+        // Standard Sidebar Toggle for Mobile
+        function setupSidebarToggle() {
+            document.addEventListener('click', (e) => {
+                const toggleBtn = e.target.closest('#mobileMenuBtn') || e.target.closest('#mobileSidebarToggle');
+                const closeBtn = e.target.closest('#closeMenuBtn');
+                const overlay = e.target.closest('#mobileOverlay') || e.target.closest('#sidebarBackdrop');
+
+                const sidebarMenu = document.getElementById('sidebarMenu') || document.getElementById('mainSidebar');
+                const mobileOverlay = document.getElementById('mobileOverlay') || document.getElementById('sidebarBackdrop');
+
+                if (!sidebarMenu) return;
+
+                if (toggleBtn) {
+                    sidebarMenu.classList.remove('-translate-x-full');
+                    if (mobileOverlay) {
+                        mobileOverlay.classList.remove('hidden');
+                        setTimeout(() => mobileOverlay.classList.add('opacity-100'), 10);
+                    }
+                    document.body.style.overflow = 'hidden'; 
+                }
+
+                if (closeBtn || overlay) {
+                    sidebarMenu.classList.add('-translate-x-full');
+                    if (mobileOverlay) {
+                        mobileOverlay.classList.remove('opacity-100');
+                        setTimeout(() => mobileOverlay.classList.add('hidden'), 200);
+                    }
+                    document.body.style.overflow = ''; 
+                }
+            });
+        }
+
+        function renderParticipantList() {
+            const listEl = document.getElementById('participantList');
+            const searchText = document.getElementById('searchParticipant').value.toLowerCase();
+            
+            listEl.innerHTML = "";
+
+            const filtered = globalParticipants.filter(p => {
+                const searchStr = `${p.staffName} ${p.staffId}`.toLowerCase();
+                return searchStr.includes(searchText);
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
+                            <i data-lucide="users-x" size="24" class="text-slate-400"></i>
+                        </div>
+                        <p class="text-sm font-bold text-slate-500">No participants found.</p>
+                        <p class="text-[11px] text-slate-400 mt-1">Try adjusting your search criteria.</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            filtered.forEach(p => {
+                const statusColor = p.attended ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200";
+                const statusIcon = p.attended ? "check-circle" : "clock";
+                const statusText = p.attended ? "Attended" : "Pending";
+
+                listEl.innerHTML += `
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl gap-4 hover:shadow-md transition-all group">
+                        <div class="flex items-center gap-4 truncate">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-slate-500 font-black text-sm uppercase">
+                                ${p.staffName.charAt(0)}
+                            </div>
+                            <div class="space-y-1 truncate">
+                                <p class="font-black text-slate-800 text-sm truncate">${p.staffName}</p>
+                                <p class="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                                    <i data-lucide="badge-help" size="12"></i> ID: ${p.staffId}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="shrink-0">
+                            <span class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border ${statusColor}">
+                                <i data-lucide="${statusIcon}" size="12"></i> ${statusText}
+                            </span>
+                        </div>
+                    </div>`;
+            });
+
+            lucide.createIcons();
+        }
+
+        async function initPage() {
+            try {
+                RoleManager.enforceStrictSession();
+                const session = JSON.parse(localStorage.getItem('session'));
+                if (!session) { RoleManager.forceLogout(); return; }
+
+                // Check URL Parameter
+                const urlParams = new URLSearchParams(window.location.search);
+                const trainingId = urlParams.get('id');
+
+                if (!trainingId) {
+                    alert("Invalid Training Request. Redirecting...");
+                    window.location.href = 'QCLeaderDashboard.html';
+                    return;
+                }
+
+                await loadSidebar('SidebarLeader.html');
+                setupSidebarToggle();
+
+                // 1. FETCH TRAINING DETAILS
+                const docRef = doc(db, "trainings", trainingId);
+                const docSnap = await getDoc(docRef);
+
+                if (!docSnap.exists()) {
+                    alert("Training module not found or has been deleted.");
+                    window.location.href = 'QCLeaderDashboard.html';
+                    return;
+                }
+
+                const training = docSnap.data();
+                
+                // Populate UI Data
+                document.getElementById('pageTitle').innerText = training.name || "Unnamed Module";
+                document.getElementById('dtDateText').innerText = training.dateString || "Date Not Set";
+                document.getElementById('dtVenueText').innerText = training.where || "TBD";
+                document.getElementById('dtDesc').innerText = training.description || "No specific instructions or descriptions provided for this module.";
+
+                // Status Logic (Upcoming vs Past)
+                const today = new Date(); 
+                today.setHours(0,0,0,0);
+                const tDate = new Date(training.dateString || 0);
+                tDate.setHours(0,0,0,0);
+                
+                const badgeContainer = document.getElementById('statusBadgeContainer');
+                if (tDate >= today) {
+                    badgeContainer.innerHTML = `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest border bg-purple-50 text-purple-700 border-purple-200 shadow-sm"><i data-lucide="calendar-clock" size="14"></i> Upcoming</span>`;
+                } else {
+                    badgeContainer.innerHTML = `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest border bg-slate-100 text-slate-600 border-slate-200 shadow-sm"><i data-lucide="archive" size="14"></i> Past Event</span>`;
+                }
+
+                // 2. FETCH REGISTRATIONS & ATTENDANCE
+                const regQuery = query(collection(db, "training_registrations"), where("trainingId", "==", trainingId));
+                const attQuery = query(collection(db, "training_attendance"), where("trainingId", "==", trainingId));
+
+                const [regSnap, attSnap] = await Promise.all([getDocs(regQuery), getDocs(attQuery)]);
+
+                const attendanceSet = new Set();
+                attSnap.forEach(doc => {
+                    const data = doc.data();
+                    attendanceSet.add(data.staffId);
+                });
+
+                globalParticipants = [];
+                regSnap.forEach(doc => {
+                    const r = doc.data();
+                    globalParticipants.push({
+                        staffId: r.staffId,
+                        staffName: r.staffName || `Operator ${r.staffId}`,
+                        attended: attendanceSet.has(r.staffId)
+                    });
+                });
+
+                // Sort alphabetically by name
+                globalParticipants.sort((a, b) => a.staffName.localeCompare(b.staffName));
+
+                // Update Stats UI
+                const totalReg = globalParticipants.length;
+                const totalAtt = globalParticipants.filter(p => p.attended).length;
+                const percent = totalReg === 0 ? 0 : Math.round((totalAtt / totalReg) * 100);
+
+                document.getElementById('statRegistered').innerText = totalReg;
+                document.getElementById('statAttended').innerText = totalAtt;
+                document.getElementById('attendanceProgressBar').style.width = `${percent}%`;
+
+                // Render List & Bind Search Event
+                renderParticipantList();
+                document.getElementById('searchParticipant').addEventListener('input', renderParticipantList);
+
+                // Reveal Page
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                lucide.createIcons();
+
+            } catch (err) {
+                console.error("Training Details Error:", err);
+                alert("Failed to load details. Please check your connection.");
+                window.location.href = 'QCLeaderDashboard.html';
+            }
+        }
+
+        initPage();
+    </script>
+</body>
+</html>

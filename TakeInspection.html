@@ -104,7 +104,7 @@
                     }
                 });
 
-                const snap = await getDoc(doc(db, "inspection_templates", templateId));
+                const snap = await getDoc(doc(db, "qc_inspection_templates", templateId));
                 if (!snap.exists()) {
                     document.getElementById('title').innerText = "Template Not Found";
                     return alert("Template not found!");
@@ -245,7 +245,7 @@
             const userName = operatorSession?.name || "Operator";
 
             try {
-                await addDoc(collection(db, "inspection_submissions"), {
+                await addDoc(collection(db, "qc_inspection_submissions"), {
                     templateId: templateId,
                     operatorId: userId,
                     operatorName: userName,

@@ -65,7 +65,7 @@
             }
 
             try {
-                const snap = await getDoc(doc(db, "qc_exams", examId));
+                const snap = await getDoc(doc(db, "qc_exams_templates", examId));
                 if (!snap.exists()) {
                     alert("Exam configuration signature not found inside the collections workspace.");
                     window.location.href = "ExamManager.html";
@@ -196,7 +196,7 @@
             lucide.createIcons();
 
             try {
-                await updateDoc(doc(db, "qc_exams", examId), { 
+                await updateDoc(doc(db, "qc_exams_templates", examId), { 
                     title: titleInput,
                     questions: questionsList
                 });

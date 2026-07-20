@@ -277,7 +277,7 @@
                 const lh = await processRows('rowsLH');
                 const rh = await processRows('rowsRH');
 
-                await addDoc(collection(db, "inspection_templates"), {
+                await addDoc(collection(db, "qc_inspection_templates"), {
                     title: titleInput,
                     lh, 
                     rh,

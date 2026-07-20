@@ -254,7 +254,7 @@ async function loadUsers(){
         });
 
         const [examSnap, inspSnap] = await Promise.all([
-            getDocs(collection(db, "exam_results")),
+            getDocs(collection(db, "qc_exam_results")),
             getDocs(collection(db, "inspection_logs"))
         ]);
 

@@ -138,7 +138,7 @@
             if (employeeId) {
                 try {
                     const targetOperatorId = String(employeeId);
-                    const examQuery = query(collection(db, "exam_results"), where("operatorId", "==", targetOperatorId));
+                    const examQuery = query(collection(db, "qc_exam_results"), where("operatorId", "==", targetOperatorId));
                     const examSnap = await getDocs(examQuery);
                     let totalExamScore = 0, examCount = 0;
                     examSnap.forEach(doc => { totalExamScore += doc.data().score || 0; examCount++; });

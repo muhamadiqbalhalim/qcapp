@@ -65,7 +65,7 @@
 
                 // 1. LOCK LOGIC
                 const subQuery = query(
-                    collection(db, "exam_submissions"), 
+                    collection(db, "qc_exam_submissions"), 
                     where("examId", "==", examId), 
                     where("operatorId", "==", String(session.employeeId || "Unknown"))
                 );
@@ -78,7 +78,7 @@
                     return;
                 }
 
-                // 2. LOAD DATA PEGAWAI
+                // 2. LOAD DATA PEGAWAI (Added dataset properties for Name and DeptID)
                 const execSelect = document.getElementById('executiveSelect');
                 const leaderSelect = document.getElementById('leaderSelect');
                 const usersSnap = await getDocs(collection(db, "users"));
@@ -90,19 +90,23 @@
                     if (role === "EXECUTIVE") {
                         const opt = document.createElement('option');
                         opt.value = docSnap.id;
+                        opt.dataset.name = user.name || docSnap.id;
+                        opt.dataset.deptId = user.departmentId || user.employeeId || "-"; // Fallback if deptId is missing
                         opt.textContent = `${user.name || docSnap.id}`;
                         execSelect.appendChild(opt);
                     }
                     if (role === "QC_LEADER") {
                         const opt = document.createElement('option');
                         opt.value = docSnap.id;
+                        opt.dataset.name = user.name || docSnap.id;
+                        opt.dataset.deptId = user.departmentId || user.employeeId || "-";
                         opt.textContent = `${user.name || docSnap.id}`;
                         leaderSelect.appendChild(opt);
                     }
                 });
 
                 // 3. LOAD DATA KANDUNGAN SOALAN EXAM
-                const snap = await getDoc(doc(db, "qc_exams", examId));
+                const snap = await getDoc(doc(db, "qc_exams_templates", examId));
                 if (!snap.exists()) { 
                     alert("Error: The requested examination template does not exist."); 
                     window.location.href = 'ExamList.html'; 
@@ -156,7 +160,6 @@
             }
             
             questions.forEach((q, index) => {
-                // Diperbaiki: Ditambah semakan alternatif jika objek menggunakan medan .question atau .questionText
                 const questionText = q.question || q.text || q.questionText || "Sila nyatakan jenis kecacatan komponen.";
                 
                 container.innerHTML += `
@@ -219,6 +222,15 @@
                 return;
             }
 
+            // Extract Name and Department ID for the Reviewers to display in ExamList
+            const execOption = executiveSelect.options[executiveSelect.selectedIndex];
+            const executiveName = execOption ? execOption.dataset.name : "";
+            const executiveDepartmentId = execOption ? execOption.dataset.deptId : "";
+
+            const leaderOption = leaderSelect.options[leaderSelect.selectedIndex];
+            const leaderName = leaderOption ? leaderOption.dataset.name : "";
+            const leaderDepartmentId = leaderOption ? leaderOption.dataset.deptId : "";
+
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
             btn.innerText = "Locking & Submitting Record...";
@@ -236,7 +248,6 @@
                     const chosenValue = selected ? selected.value : "";
                     userResults[`q${index}`] = chosenValue;
                     
-                    // Diperbaiki: Sokongan dinamik untuk skema jawapan Firestore (correct / correctAnswer / correctSolutionKey)
                     const correctAnswerKey = q.correct || q.correctAnswer || q.correctSolutionKey || "";
                     if (chosenValue === correctAnswerKey) score++;
                 });
@@ -246,23 +257,45 @@
             const parsedFinalMark = parseFloat(finalMark);
             
             try {
-                // 1. Serahan Utama Dokumen Peperiksaan untuk Aliran Kerja Kelulusan
-                await addDoc(collection(db, "exam_submissions"), {
+                // 1. Main Document Submission - Now includes Name, DepartmentID, and standardized timestamps
+                await addDoc(collection(db, "qc_exam_submissions"), {
                     examId: examId, 
                     examName: window.examData.title || "QC Exam",
                     operatorId: String(session.employeeId || "Unknown"),
                     operatorName: session.name || "QC Operator",
                     marks: parsedFinalMark,
                     results: userResults,
+                    // Top-level properties
                     executiveId: executiveId,
+                    executiveName: executiveName,
+                    executiveDepartmentId: executiveDepartmentId,
                     leaderId: leaderId,
+                    leaderName: leaderName,
+                    leaderDepartmentId: leaderDepartmentId,
                     status: 'pending_leader',
                     submittedAt: serverTimestamp(),
-                    updatedAt: serverTimestamp()
+                    updatedAt: serverTimestamp(),
+                    // Nested objects to perfectly match what ExamList checks for
+                    leaderApproval: {
+                        approverId: leaderId,
+                        approverName: leaderName,
+                        departmentId: leaderDepartmentId,
+                        status: 'Pending',
+                        reason: '',
+                        timestamp: serverTimestamp()
+                    },
+                    executiveApproval: {
+                        approverId: executiveId,
+                        approverName: executiveName,
+                        departmentId: executiveDepartmentId,
+                        status: 'Pending',
+                        reason: '',
+                        timestamp: serverTimestamp()
+                    }
                 });
 
-                // 2. JAMBATAN INTEGRASI DATA KEMAHIRAN (Dihubungkan ke modul SkillsChart)
-                await addDoc(collection(db, "exam_results"), {
+                // 2. SKILLS CHART INTEGRATION
+                await addDoc(collection(db, "qc_exam_results"), {
                     operatorId: String(session.employeeId || "Unknown"),
                     operatorName: session.name || "QC Operator",
                     examId: examId,

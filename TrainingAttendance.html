@@ -37,7 +37,8 @@
 
                     <div class="mb-4">
                         <label class="block text-xs font-bold text-slate-500 mb-1">Select Training Session</label>
-                        <select id="trainingSelect" class="w-full p-3.5 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-100">
+                        <!-- Added 'truncate' class here to prevent the closed select box from overflowing -->
+                        <select id="trainingSelect" class="w-full truncate p-3.5 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-100">
                             <option value="">-- Choose Active Session --</option>
                         </select>
                     </div>
@@ -73,10 +74,9 @@
         // Kawalan Sekatan Sesi Tegas
         RoleManager.enforceStrictSession();
         
-        // PENTING: ProtectPage dibuang supaya Operator, Leader, & Executive semuanya boleh hantar kehadiran sendiri.
-        // RoleManager.protectPage(ROLES.QG_OPERATOR);
-
         const user = JSON.parse(localStorage.getItem("session"));
+        const userRole = (user.role || "").toUpperCase();
+        
         let registrations = [];
         let selectedTraining = null;
 
@@ -85,7 +85,7 @@
 
         async function init() {
             // Muatkan Fail Sidebar dinamik mengikut peranan akaun semasa yang sedang buka
-            const targetSidebar = user.role === ROLES.EXECUTIVE ? 'SidebarExecutive.html' : (user.role === ROLES.QC_LEADER ? 'SidebarLeader.html' : 'SidebarOperator.html');
+            const targetSidebar = userRole === "EXECUTIVE" ? 'SidebarExecutive.html' : (userRole === "QC_LEADER" ? 'SidebarLeader.html' : 'SidebarOperator.html');
             await loadSidebar(targetSidebar);
 
             document.getElementById('userName').value = user.name;
@@ -110,7 +110,13 @@
                 
                 const opt = document.createElement('option');
                 opt.value = data.trainingId;
-                opt.textContent = data.trainingName;
+                
+                // Limit the text to 60 characters to prevent layout breakage in the dropdown
+                const maxLength = 60; 
+                opt.textContent = data.trainingName.length > maxLength 
+                    ? data.trainingName.substring(0, maxLength) + '...' 
+                    : data.trainingName;
+                    
                 select.appendChild(opt);
             });
 
@@ -222,7 +228,7 @@
                     "QC_LEADER": "QCLeaderDashboard.html",
                     "QG_OPERATOR": "QGOperatorDashboard.html"
                 };
-                const targetDashboard = dashboardMap[user.role] || 'QGOperatorDashboard.html';
+                const targetDashboard = dashboardMap[userRole] || 'QGOperatorDashboard.html';
                 window.location.replace(targetDashboard);
                 
             } catch (e) {
