@@ -37,6 +37,55 @@
                             <span class="p-1.5 bg-amber-50 rounded-lg text-amber-600"><i data-lucide="arrow-left-circle" size="18"></i></span>
                             <h2 class="text-lg font-black text-amber-600 tracking-tight">LEFT HAND (LH) OPERATIONS SCHEMA</h2>
                         </div>
+
+                        <!-- Required LH full part image -->
+                        <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
+                            <div class="flex flex-col gap-1 mb-3">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="image-plus" size="17" class="text-amber-600"></i>
+                                    <label for="lhPartImage" class="text-xs font-black uppercase tracking-wider text-slate-700">
+                                        LH Full Part Image <span class="text-red-500">*</span>
+                                    </label>
+                                </div>
+                                <p class="text-[11px] font-medium text-slate-400">
+                                    Required. The current image is displayed here. Select a new file only when the LH full part image needs to be replaced.
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 items-stretch">
+                                <label for="lhPartImage"
+                                       class="min-h-[180px] cursor-pointer rounded-2xl border-2 border-dashed border-amber-300 bg-white hover:bg-amber-50 transition-colors flex flex-col items-center justify-center text-center p-5">
+                                    <i data-lucide="upload-cloud" size="28" class="text-amber-500 mb-2"></i>
+                                    <span class="text-xs font-black text-slate-700">Replace LH Full Part Image</span>
+                                    <span class="text-[10px] font-medium text-slate-400 mt-1">JPG, PNG, WEBP — maximum 5MB</span>
+                                    <input type="file"
+                                           id="lhPartImage"
+                                           accept="image/*"
+                                           onchange="handlePartImagePreview(this, 'LH')"
+                                           class="hidden">
+                                </label>
+
+                                <div class="relative min-h-[180px] rounded-2xl border border-slate-200 bg-white overflow-hidden flex items-center justify-center">
+                                    <div id="lhPartPreviewEmpty" class="flex flex-col items-center justify-center text-center p-5 text-slate-300">
+                                        <i data-lucide="image" size="34"></i>
+                                        <span class="text-[11px] font-bold mt-2">No LH full part image available</span>
+                                    </div>
+
+                                    <img id="lhPartPreview"
+                                         alt="LH full part preview"
+                                         class="hidden w-full h-[260px] object-contain bg-white p-3">
+
+                                    <button type="button"
+                                            id="lhPartRemoveBtn"
+                                            onclick="clearPartImage('LH')"
+                                            class="hidden absolute top-3 right-3 p-2 rounded-xl bg-white/95 border border-slate-200 text-slate-500 hover:text-red-500 hover:border-red-200 shadow-sm transition-colors"
+                                            title="Remove or reset LH image">
+                                        <i data-lucide="trash-2" size="16"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="overflow-x-auto w-full pb-2">
                             <table class="w-full text-[11px] text-center border-collapse min-w-[1000px]">
                                 <thead class="bg-slate-50 uppercase text-[10px] text-slate-400 font-black tracking-wider border-b border-slate-100">
@@ -69,6 +118,55 @@
                             <span class="p-1.5 bg-blue-50 rounded-lg text-blue-600"><i data-lucide="arrow-right-circle" size="18"></i></span>
                             <h2 class="text-lg font-black text-blue-600 tracking-tight">RIGHT HAND (RH) OPERATIONS SCHEMA</h2>
                         </div>
+
+                        <!-- Required RH full part image -->
+                        <div class="mb-6 rounded-2xl border border-blue-200 bg-blue-50/40 p-4">
+                            <div class="flex flex-col gap-1 mb-3">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="image-plus" size="17" class="text-blue-600"></i>
+                                    <label for="rhPartImage" class="text-xs font-black uppercase tracking-wider text-slate-700">
+                                        RH Full Part Image <span class="text-red-500">*</span>
+                                    </label>
+                                </div>
+                                <p class="text-[11px] font-medium text-slate-400">
+                                    Required. The current image is displayed here. Select a new file only when the RH full part image needs to be replaced.
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 items-stretch">
+                                <label for="rhPartImage"
+                                       class="min-h-[180px] cursor-pointer rounded-2xl border-2 border-dashed border-blue-300 bg-white hover:bg-blue-50 transition-colors flex flex-col items-center justify-center text-center p-5">
+                                    <i data-lucide="upload-cloud" size="28" class="text-blue-500 mb-2"></i>
+                                    <span class="text-xs font-black text-slate-700">Replace RH Full Part Image</span>
+                                    <span class="text-[10px] font-medium text-slate-400 mt-1">JPG, PNG, WEBP — maximum 5MB</span>
+                                    <input type="file"
+                                           id="rhPartImage"
+                                           accept="image/*"
+                                           onchange="handlePartImagePreview(this, 'RH')"
+                                           class="hidden">
+                                </label>
+
+                                <div class="relative min-h-[180px] rounded-2xl border border-slate-200 bg-white overflow-hidden flex items-center justify-center">
+                                    <div id="rhPartPreviewEmpty" class="flex flex-col items-center justify-center text-center p-5 text-slate-300">
+                                        <i data-lucide="image" size="34"></i>
+                                        <span class="text-[11px] font-bold mt-2">No RH full part image available</span>
+                                    </div>
+
+                                    <img id="rhPartPreview"
+                                         alt="RH full part preview"
+                                         class="hidden w-full h-[260px] object-contain bg-white p-3">
+
+                                    <button type="button"
+                                            id="rhPartRemoveBtn"
+                                            onclick="clearPartImage('RH')"
+                                            class="hidden absolute top-3 right-3 p-2 rounded-xl bg-white/95 border border-slate-200 text-slate-500 hover:text-red-500 hover:border-red-200 shadow-sm transition-colors"
+                                            title="Remove or reset RH image">
+                                        <i data-lucide="trash-2" size="16"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="overflow-x-auto w-full pb-2">
                             <table class="w-full text-[11px] text-center border-collapse min-w-[1000px]">
                                 <thead class="bg-slate-50 uppercase text-[10px] text-slate-400 font-black tracking-wider border-b border-slate-100">
@@ -96,7 +194,7 @@
                         </button>
                     </div>
 
-                    <button id="saveBtn" onclick="saveTemplate()" class="w-full py-5 bg-purple-600 text-white font-black rounded-2xl shadow-sm hover:bg-purple-700 transition-colors uppercase text-sm tracking-wider flex items-center justify-center gap-2">
+                    <button id="saveBtn" onclick="saveTemplate()" class="w-full py-5 bg-purple-600 text-white font-black rounded-2xl shadow-sm hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors uppercase text-sm tracking-wider flex items-center justify-center gap-2">
                         <i data-lucide="save" size="18"></i> Update Template Changes
                     </button>
                 </div>
@@ -114,7 +212,7 @@
     <script type="module">
         import { db } from './js/FirebaseConfig.js';
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
-        import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
         import { loadSidebar } from './js/sidebar-loader.js';
         import { ROLES, RoleManager } from './js/Roles.js';
 
@@ -123,7 +221,12 @@
         RoleManager.protectPage(ROLES.QC_LEADER, ROLES.EXECUTIVE);
 
         const storage = getStorage();
-        const sessionData = JSON.parse(localStorage.getItem("session"));
+        const sessionData = JSON.parse(localStorage.getItem("session") || "null");
+        const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+        const existingPartImages = {
+            lh: null,
+            rh: null
+        };
         
         // Extract Template Target ID
         const urlParams = new URLSearchParams(window.location.search);
@@ -175,6 +278,122 @@
             }
         }
 
+        function sanitizeFileName(fileName) {
+            return fileName
+                .toLowerCase()
+                .replace(/[^a-z0-9._-]+/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '');
+        }
+
+        function createUniqueFileName(prefix, originalName) {
+            const randomId =
+                typeof crypto !== 'undefined' && crypto.randomUUID
+                    ? crypto.randomUUID()
+                    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+            return `${prefix}-${randomId}-${sanitizeFileName(originalName)}`;
+        }
+
+        function validateImageFile(file) {
+            if (!file) return false;
+
+            if (!file.type.startsWith('image/')) {
+                alert("Only image files are allowed.");
+                return false;
+            }
+
+            if (file.size > MAX_IMAGE_SIZE) {
+                alert("Maximum image size is 5MB.");
+                return false;
+            }
+
+            return true;
+        }
+
+        function renderPartImagePreview(side, imageUrl = null) {
+            const normalizedSide = side.toUpperCase();
+            const sideKey = normalizedSide.toLowerCase();
+            const preview = document.getElementById(`${sideKey}PartPreview`);
+            const emptyState = document.getElementById(`${sideKey}PartPreviewEmpty`);
+            const removeButton = document.getElementById(`${sideKey}PartRemoveBtn`);
+
+            if (!preview || !emptyState || !removeButton) return;
+
+            if (imageUrl) {
+                preview.src = imageUrl;
+                preview.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                removeButton.classList.remove('hidden');
+            } else {
+                preview.removeAttribute('src');
+                preview.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                removeButton.classList.add('hidden');
+            }
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.handlePartImagePreview = (input, side) => {
+            const normalizedSide = side.toUpperCase();
+            const sideKey = normalizedSide.toLowerCase();
+            const file = input.files?.[0];
+
+            if (!file) {
+                renderPartImagePreview(normalizedSide, existingPartImages[sideKey]);
+                return;
+            }
+
+            if (!validateImageFile(file)) {
+                input.value = "";
+                renderPartImagePreview(normalizedSide, existingPartImages[sideKey]);
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+                renderPartImagePreview(normalizedSide, event.target.result);
+            };
+
+            reader.onerror = () => {
+                alert(`Unable to preview the ${normalizedSide} full part image.`);
+                input.value = "";
+                renderPartImagePreview(normalizedSide, existingPartImages[sideKey]);
+            };
+
+            reader.readAsDataURL(file);
+        };
+
+        window.clearPartImage = (side) => {
+            const normalizedSide = side.toUpperCase();
+            const sideKey = normalizedSide.toLowerCase();
+            const input = document.getElementById(`${sideKey}PartImage`);
+
+            // If a new file is selected, clear it and return to the current saved image.
+            if (input?.files?.length) {
+                input.value = "";
+                renderPartImagePreview(normalizedSide, existingPartImages[sideKey]);
+                return;
+            }
+
+            // If the saved image itself is removed, a replacement becomes mandatory before saving.
+            existingPartImages[sideKey] = null;
+            renderPartImagePreview(normalizedSide, null);
+        };
+
+        async function uploadImage(file, folder, prefix) {
+            const storagePath = `${folder}/${createUniqueFileName(prefix, file.name)}`;
+            const imageRef = ref(storage, storagePath);
+
+            await uploadBytes(imageRef, file, {
+                contentType: file.type
+            });
+
+            return getDownloadURL(imageRef);
+        }
+
         window.addRow = (containerId, initialData = null) => {
             const tbody = document.getElementById(containerId);
             const tr = document.createElement('tr');
@@ -211,11 +430,11 @@
         };
 
         window.validateUploadPayload = (input) => {
-            if (input.files && input.files[0]) {
-                if (input.files[0].size > 5 * 1024 * 1024) {
-                    alert("Media element parameter constraints broken! Maximum allowed threshold size cap limit is 5MB.");
-                    input.value = "";
-                }
+            const file = input.files?.[0];
+            if (!file) return;
+
+            if (!validateImageFile(file)) {
+                input.value = "";
             }
         };
 
@@ -235,14 +454,11 @@
                 let refUrl = existingRefUrl;
 
                 if (stdFile) {
-                    const sRef = ref(storage, 'insp/' + Date.now() + '_std_' + stdFile.name);
-                    await uploadBytes(sRef, stdFile);
-                    stdUrl = await getDownloadURL(sRef);
+                    stdUrl = await uploadImage(stdFile, 'insp/row-assets/standard', 'std');
                 }
+
                 if (refFile) {
-                    const rRef = ref(storage, 'insp/' + Date.now() + '_ref_' + refFile.name);
-                    await uploadBytes(rRef, refFile);
-                    refUrl = await getDownloadURL(rRef);
+                    refUrl = await uploadImage(refFile, 'insp/row-assets/reference', 'ref');
                 }
 
                 rows.push({
@@ -265,6 +481,10 @@
 
         async function loadData() {
             try {
+                if (!sessionData) {
+                    throw new Error("No valid user session found.");
+                }
+
                 // Initialize Dynamic Navigation Frame
                 const targetSidebar = sessionData.role === ROLES.EXECUTIVE ? 'SidebarExecutive.html' : 'SidebarLeader.html';
                 await loadSidebar(targetSidebar);
@@ -280,6 +500,12 @@
 
                 const data = docSnap.data();
                 document.getElementById('templateTitle').value = data.title || '';
+
+                // Load the existing required full-part images.
+                existingPartImages.lh = data.lhPartImage || null;
+                existingPartImages.rh = data.rhPartImage || null;
+                renderPartImagePreview('LH', existingPartImages.lh);
+                renderPartImagePreview('RH', existingPartImages.rh);
 
                 // Populate LH Rows
                 if (data.lh && data.lh.length > 0) {
@@ -318,20 +544,55 @@
             if (window.lucide) lucide.createIcons();
 
             try {
+                const lhPartFile = document.getElementById('lhPartImage').files?.[0] || null;
+                const rhPartFile = document.getElementById('rhPartImage').files?.[0] || null;
+
+                if (!lhPartFile && !existingPartImages.lh) {
+                    alert("LH Full Part Image is required before updating the template.");
+                    document.getElementById('lhPartImage').click();
+                    throw new Error("LH full part image is required.");
+                }
+
+                if (!rhPartFile && !existingPartImages.rh) {
+                    alert("RH Full Part Image is required before updating the template.");
+                    document.getElementById('rhPartImage').click();
+                    throw new Error("RH full part image is required.");
+                }
+
+                const [lhPartImageUrl, rhPartImageUrl] = await Promise.all([
+                    lhPartFile
+                        ? uploadImage(lhPartFile, 'insp/full-part-images/lh', 'lh-full-part')
+                        : Promise.resolve(existingPartImages.lh),
+                    rhPartFile
+                        ? uploadImage(rhPartFile, 'insp/full-part-images/rh', 'rh-full-part')
+                        : Promise.resolve(existingPartImages.rh)
+                ]);
+
                 const lh = await processRows('rowsLH');
                 const rh = await processRows('rowsRH');
 
                 await updateDoc(doc(db, "qc_inspection_templates", templateId), {
                     title: titleInput,
-                    lh, 
-                    rh
+                    lhPartImage: lhPartImageUrl,
+                    rhPartImage: rhPartImageUrl,
+                    lh,
+                    rh,
+                    updatedAt: serverTimestamp(),
+                    updatedBy: {
+                        id: String(sessionData.employeeId || 'N/A'),
+                        name: sessionData.name || 'System Admin'
+                    }
                 });
 
                 alert("Asymmetric dual system testing template updated successfully!");
                 window.location.href = "InspectionList.html";
             } catch (e) {
                 console.error("Storage Stream Write Failure Mapping:", e);
-                alert("Failed to commit modifications pipeline: " + e.message);
+
+                if (!String(e.message).includes("full part image is required")) {
+                    alert("Failed to commit modifications pipeline: " + e.message);
+                }
+
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = `<i data-lucide="save" size="18"></i> Update Template Changes`;
                 if (window.lucide) lucide.createIcons();

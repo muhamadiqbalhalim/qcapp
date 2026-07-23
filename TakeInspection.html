@@ -122,8 +122,23 @@
                 const calcTotalCT = (arr) => arr.reduce((acc, row) => acc + (parseInt(row.ct) || 0), 0);
                 totalBenchmarkedCT = calcTotalCT(data.lh || []) + calcTotalCT(data.rh || []);
 
-                renderSection('LEFT HAND (LH)', data.lh || [], 'border-amber-100', 'text-amber-600', 'LH');
-                renderSection('RIGHT HAND (RH)', data.rh || [], 'border-blue-100', 'text-blue-600', 'RH');
+                renderSection(
+                    'LEFT HAND (LH)',
+                    data.lh || [],
+                    data.lhPartImage || '',
+                    'border-amber-100',
+                    'text-amber-600',
+                    'LH'
+                );
+
+                renderSection(
+                    'RIGHT HAND (RH)',
+                    data.rh || [],
+                    data.rhPartImage || '',
+                    'border-blue-100',
+                    'text-blue-600',
+                    'RH'
+                );
 
             } catch (error) {
                 console.error("Initialization error:", error);
@@ -131,13 +146,40 @@
             }
         }
 
-        function renderSection(title, rows, borderClass, textClass, sectionPrefix) {
+        function renderSection(title, rows, fullPartImage, borderClass, textClass, sectionPrefix) {
             const container = document.getElementById('inspectionContainer');
             const section = document.createElement('div');
             section.className = `bg-white p-4 md:p-6 rounded-3xl border shadow-sm ${borderClass}`;
 
+            const fullPartImageBlock = fullPartImage
+                ? `
+                    <div class="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                        <div class="flex flex-col gap-1 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Full Part Reference Image</p>
+                                <p class="mt-0.5 text-sm font-bold text-slate-700">${title} complete-part view</p>
+                            </div>
+                            <p class="text-[10px] font-bold text-slate-400">Click the image to view full size</p>
+                        </div>
+                        <button type="button"
+                                data-full-part-url="${fullPartImage}"
+                                class="group block w-full cursor-zoom-in bg-white p-3 text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-300"
+                                aria-label="Open ${title} full part image">
+                            <img src="${fullPartImage}"
+                                 alt="${title} Full Part"
+                                 class="mx-auto max-h-[460px] w-full rounded-xl object-contain transition duration-200 group-hover:opacity-90"
+                                 loading="eager">
+                        </button>
+                    </div>`
+                : `
+                    <div class="mb-6 rounded-2xl border border-dashed border-amber-300 bg-amber-50 px-4 py-4">
+                        <p class="text-sm font-black text-amber-700">Full part image is not available.</p>
+                        <p class="mt-1 text-xs font-medium text-amber-600">Ask a QC Leader or Executive to add the ${title} image in the inspection template.</p>
+                    </div>`;
+
             let html = `
                 <h2 class="text-xl font-black mb-4 ${textClass}">${title}</h2>
+                ${fullPartImageBlock}
                 <div class="overflow-x-auto">
                     <table class="w-full text-xs text-center border-collapse">
                         <thead class="bg-slate-50 uppercase text-[10px] text-slate-500 font-black">
@@ -167,8 +209,20 @@
                         ${renderRadio(row.seqMandatory, 'seq', row.id, sectionPrefix)}
                     </tr>`;
             });
+
             html += `</tbody></table></div>`;
             section.innerHTML = html;
+
+            const fullPartButton = section.querySelector('[data-full-part-url]');
+            if (fullPartButton) {
+                fullPartButton.addEventListener('click', () => {
+                    const imageUrl = fullPartButton.dataset.fullPartUrl;
+                    if (imageUrl) {
+                        window.open(imageUrl, '_blank', 'noopener,noreferrer');
+                    }
+                });
+            }
+
             container.appendChild(section);
         }
 
