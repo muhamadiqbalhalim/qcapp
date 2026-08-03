@@ -146,6 +146,75 @@
             }
         }
 
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function getCriteriaPoints(row) {
+            if (Array.isArray(row.criteriaPoints)) {
+                return row.criteriaPoints
+                    .map(point => String(point ?? '').trim())
+                    .filter(Boolean);
+            }
+
+            const legacyCriteria = String(row.criteria || '').trim();
+            if (!legacyCriteria) return [];
+
+            return legacyCriteria
+                .split(/\r?\n|\s*[•▪◦]\s*/)
+                .map(point => point.replace(/^[-*]\s*/, '').trim())
+                .filter(Boolean);
+        }
+
+        function renderCriteriaDetails(row) {
+            const points = getCriteriaPoints(row);
+            const criteriaImage = row.criteriaImg || '';
+
+            const pointsHtml = points.length
+                ? `<ul class="list-disc space-y-1 pl-4 text-left text-[11px] leading-relaxed text-slate-700">
+                    ${points.map(point => `<li>${escapeHtml(point)}</li>`).join('')}
+                   </ul>`
+                : `<span class="text-[10px] font-bold text-slate-300">No criteria provided</span>`;
+
+            const imageHtml = criteriaImage
+                ? `<button type="button"
+                           class="criteria-image-btn mt-3 block w-full rounded-xl border border-slate-200 bg-slate-50 p-1.5 hover:border-purple-300 hover:bg-purple-50/40 transition"
+                           data-image-url="${escapeHtml(criteriaImage)}"
+                           aria-label="Open criteria image">
+                       <img src="${escapeHtml(criteriaImage)}"
+                            alt="Criteria reference"
+                            class="mx-auto h-24 w-full rounded-lg object-contain bg-white"
+                            loading="lazy">
+                       <span class="mt-1 block text-[9px] font-black uppercase tracking-wider text-purple-600">View criteria image</span>
+                   </button>`
+                : '';
+
+            return `<div class="min-w-[210px]">${pointsHtml}${imageHtml}</div>`;
+        }
+
+        function renderAssetImage(imageUrl, altText) {
+            if (!imageUrl) {
+                return `<span class="text-[10px] font-bold text-slate-300">N/A</span>`;
+            }
+
+            const safeUrl = escapeHtml(imageUrl);
+            return `<button type="button"
+                            class="asset-image-btn rounded-lg border border-slate-200 bg-white p-1 hover:border-purple-300 transition"
+                            data-image-url="${safeUrl}"
+                            aria-label="Open ${escapeHtml(altText)} image">
+                        <img src="${safeUrl}"
+                             class="mx-auto h-12 w-12 rounded object-cover"
+                             alt="${escapeHtml(altText)}"
+                             loading="lazy">
+                    </button>`;
+        }
+
         function renderSection(title, rows, fullPartImage, borderClass, textClass, sectionPrefix) {
             const container = document.getElementById('inspectionContainer');
             const section = document.createElement('div');
@@ -181,10 +250,10 @@
                 <h2 class="text-xl font-black mb-4 ${textClass}">${title}</h2>
                 ${fullPartImageBlock}
                 <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-center border-collapse">
+                    <table class="w-full min-w-[1450px] text-xs text-center border-collapse">
                         <thead class="bg-slate-50 uppercase text-[10px] text-slate-500 font-black">
                             <tr>
-                                <th class="p-3 border">ID</th><th class="p-3 border">Inspection Item</th><th class="p-3 border">Criteria</th>
+                                <th class="p-3 border">ID</th><th class="p-3 border">Inspection Item</th><th class="p-3 border min-w-[230px]">Criteria Details</th>
                                 <th class="p-3 border">Standard</th><th class="p-3 border">Rank</th><th class="p-3 border">Key Point</th>
                                 <th class="p-3 border">Reference</th><th class="p-3 border">Method</th><th class="p-3 border">CT</th>
                                 <th class="p-3 border">Insp. Res</th><th class="p-3 border">KeyPt Res</th><th class="p-3 border">Seq. Res</th>
@@ -195,14 +264,14 @@
             rows.forEach((row) => {
                 html += `
                     <tr class="border-b hover:bg-slate-50" data-row-id="${row.id}">
-                        <td class="p-3 border font-bold">${row.id}</td>
-                        <td class="p-3 border text-left min-w-[120px]">${row.item || ''}</td>
-                        <td class="p-3 border">${row.criteria || ''}</td>
-                        <td class="p-3 border"><img src="${row.standardImg || ''}" onclick="window.open('${row.standardImg || ''}')" class="w-12 h-12 object-cover mx-auto cursor-pointer rounded border" alt="Standard"></td>
-                        <td class="p-3 border">${row.rank || ''}</td>
-                        <td class="p-3 border text-left min-w-[150px]">${row.keyPoint || ''}</td>
-                        <td class="p-3 border"><img src="${row.referenceImg || ''}" onclick="window.open('${row.referenceImg || ''}')" class="w-12 h-12 object-cover mx-auto cursor-pointer rounded border" alt="Reference"></td>
-                        <td class="p-3 border">${row.method || ''}</td>
+                        <td class="p-3 border font-bold">${escapeHtml(row.id)}</td>
+                        <td class="p-3 border text-left min-w-[140px]">${escapeHtml(row.item || '')}</td>
+                        <td class="p-3 border align-top">${renderCriteriaDetails(row)}</td>
+                        <td class="p-3 border">${renderAssetImage(row.standardImg, 'Standard')}</td>
+                        <td class="p-3 border">${escapeHtml(row.rank || '')}</td>
+                        <td class="p-3 border text-left min-w-[150px]">${escapeHtml(row.keyPoint || '')}</td>
+                        <td class="p-3 border">${renderAssetImage(row.referenceImg, 'Reference')}</td>
+                        <td class="p-3 border">${escapeHtml(row.method || '')}</td>
                         <td class="p-3 border">${row.ct ?? 0}s</td>
                         ${renderRadio(row.inspMandatory, 'insp', row.id, sectionPrefix)}
                         ${renderRadio(row.keyPtMandatory, 'keyPt', row.id, sectionPrefix)}
@@ -222,6 +291,15 @@
                     }
                 });
             }
+
+            section.querySelectorAll('.criteria-image-btn, .asset-image-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const imageUrl = button.dataset.imageUrl;
+                    if (imageUrl) {
+                        window.open(imageUrl, '_blank', 'noopener,noreferrer');
+                    }
+                });
+            });
 
             container.appendChild(section);
         }

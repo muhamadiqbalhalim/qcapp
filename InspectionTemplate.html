@@ -98,12 +98,12 @@
                         </div>
 
                         <div class="overflow-x-auto w-full pb-2">
-                            <table class="w-full text-[11px] text-center border-collapse min-w-[1000px]">
+                            <table class="w-full text-[11px] text-center border-collapse min-w-[1180px]">
                                 <thead class="bg-slate-50 uppercase text-[10px] text-slate-400 font-black tracking-wider border-b border-slate-100">
                                     <tr>
                                         <th class="p-2.5 text-left w-12">ID</th>
                                         <th class="p-2.5 text-left min-w-[140px]">Inspection Item</th>
-                                        <th class="p-2.5 text-left min-w-[120px]">Criteria Details</th>
+                                        <th class="p-2.5 text-left min-w-[240px]">Criteria Details</th>
                                         <th class="p-2.5 text-left min-w-[130px]">Standard Asset</th>
                                         <th class="p-2.5 w-14">Rank</th>
                                         <th class="p-2.5 text-left min-w-[110px]">Key Point Check</th>
@@ -196,12 +196,12 @@
                         </div>
 
                         <div class="overflow-x-auto w-full pb-2">
-                            <table class="w-full text-[11px] text-center border-collapse min-w-[1000px]">
+                            <table class="w-full text-[11px] text-center border-collapse min-w-[1180px]">
                                 <thead class="bg-slate-50 uppercase text-[10px] text-slate-400 font-black tracking-wider border-b border-slate-100">
                                     <tr>
                                         <th class="p-2.5 text-left w-12">ID</th>
                                         <th class="p-2.5 text-left min-w-[140px]">Inspection Item</th>
-                                        <th class="p-2.5 text-left min-w-[120px]">Criteria Details</th>
+                                        <th class="p-2.5 text-left min-w-[240px]">Criteria Details</th>
                                         <th class="p-2.5 text-left min-w-[130px]">Standard Asset</th>
                                         <th class="p-2.5 w-14">Rank</th>
                                         <th class="p-2.5 text-left min-w-[110px]">Key Point Check</th>
@@ -457,8 +457,29 @@
                 <td class="p-1.5">
                     <input type="text" class="r-item w-full p-2 border border-slate-200 rounded-xl font-medium outline-none focus:ring-1 focus:ring-purple-200">
                 </td>
-                <td class="p-1.5">
-                    <input type="text" class="r-crit w-full p-2 border border-slate-200 rounded-xl font-medium outline-none focus:ring-1 focus:ring-purple-200">
+                <td class="p-1.5 align-top">
+                    <div class="space-y-2 min-w-[230px]">
+                        <textarea
+                            rows="5"
+                            class="r-crit w-full p-2.5 border border-slate-200 rounded-xl font-medium outline-none focus:ring-1 focus:ring-purple-200 resize-y leading-relaxed"
+                            placeholder="Enter one inspection criterion per line. Example:
+No scratch or dent
+Hole position must be aligned
+Surface must be clean"
+                        ></textarea>
+                        <p class="text-[9px] text-slate-400 font-medium leading-tight">Each new line will be saved and displayed as a bullet point.</p>
+                        <label class="flex items-center gap-2 cursor-pointer rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-2 hover:bg-slate-100 transition-colors">
+                            <i data-lucide="image-plus" size="14" class="text-purple-500 shrink-0"></i>
+                            <span class="text-[10px] font-bold text-slate-500 truncate">Add criteria image</span>
+                            <input type="file" accept="image/*" onchange="handleCriteriaImagePreview(this)" class="r-crit-img hidden">
+                        </label>
+                        <div class="r-crit-preview-wrap hidden relative rounded-xl border border-slate-200 bg-white overflow-hidden">
+                            <img class="r-crit-preview w-full h-28 object-contain p-2" alt="Criteria preview">
+                            <button type="button" onclick="clearCriteriaImage(this)" class="absolute top-1.5 right-1.5 p-1.5 rounded-lg bg-white/95 border border-slate-200 text-slate-400 hover:text-red-500 shadow-sm" title="Remove criteria image">
+                                <i data-lucide="x" size="13"></i>
+                            </button>
+                        </div>
+                    </div>
                 </td>
                 <td class="p-1.5">
                     <input type="file" accept="image/*" onchange="validateUploadPayload(this)" class="r-std w-full text-[10px] text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-600 file:font-bold hover:file:bg-slate-200">
@@ -498,6 +519,51 @@
             lucide.createIcons();
         };
 
+        window.handleCriteriaImagePreview = (input) => {
+            const file = input.files?.[0];
+            if (!file) return;
+
+            if (!validateImageFile(file)) {
+                input.value = "";
+                return;
+            }
+
+            const wrapper = input.closest('div.space-y-2');
+            const previewWrap = wrapper?.querySelector('.r-crit-preview-wrap');
+            const preview = wrapper?.querySelector('.r-crit-preview');
+            if (!previewWrap || !preview) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                preview.src = event.target.result;
+                previewWrap.classList.remove('hidden');
+                lucide.createIcons();
+            };
+            reader.onerror = () => {
+                alert("Unable to preview the criteria image.");
+                input.value = "";
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.clearCriteriaImage = (button) => {
+            const wrapper = button.closest('div.space-y-2');
+            const input = wrapper?.querySelector('.r-crit-img');
+            const previewWrap = wrapper?.querySelector('.r-crit-preview-wrap');
+            const preview = wrapper?.querySelector('.r-crit-preview');
+
+            if (input) input.value = "";
+            if (preview) preview.src = "";
+            if (previewWrap) previewWrap.classList.add('hidden');
+        };
+
+        function parseCriteriaPoints(rawValue) {
+            return rawValue
+                .split(/\r?\n/)
+                .map(point => point.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim())
+                .filter(Boolean);
+        }
+
         window.validateUploadPayload = (input) => {
             const file = input.files?.[0];
             if (!file) return;
@@ -525,9 +591,11 @@
             for (const row of targetedElements) {
                 const standardFile = row.querySelector('.r-std').files?.[0] || null;
                 const referenceFile = row.querySelector('.r-ref').files?.[0] || null;
+                const criteriaFile = row.querySelector('.r-crit-img').files?.[0] || null;
 
                 let standardUrl = null;
                 let referenceUrl = null;
+                let criteriaImageUrl = null;
 
                 if (standardFile) {
                     standardUrl = await uploadImage(
@@ -545,10 +613,26 @@
                     );
                 }
 
+                if (criteriaFile) {
+                    criteriaImageUrl = await uploadImage(
+                        criteriaFile,
+                        'insp/criteria-assets',
+                        'criteria'
+                    );
+                }
+
+                const criteriaPoints = parseCriteriaPoints(
+                    row.querySelector('.r-crit').value
+                );
+
                 rows.push({
                     id: row.querySelector('.r-id').value.trim(),
                     item: row.querySelector('.r-item').value.trim(),
-                    criteria: row.querySelector('.r-crit').value.trim(),
+                    // Keep a formatted string for backward compatibility,
+                    // while criteriaPoints is the preferred bullet-list format.
+                    criteria: criteriaPoints.map(point => `• ${point}`).join('\n'),
+                    criteriaPoints,
+                    criteriaImg: criteriaImageUrl,
                     standardImg: standardUrl,
                     rank: row.querySelector('.r-rank').value.trim(),
                     keyPoint: row.querySelector('.r-kp').value.trim(),
